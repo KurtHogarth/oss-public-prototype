@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Economy — OSS</title>
+<meta name="description" content="LVT, Citizen's Dividend, Sovereign Fund — with an interactive scenario calculator.">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.factgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.factcard{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:1.1rem}
+.factcard h3{font-family:var(--serif);font-size:14.5px;margin:0 0 .5rem}
+.factcard p{font-size:12.5px;color:var(--soft);margin:0}
+.factcard .num{font-family:var(--mono);font-size:20px;color:var(--teal-d);display:block;margin-bottom:.3rem}
+.calcwrap{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:1.4rem}
+.scenario-flag{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--seal-w);color:var(--seal-d);border-radius:5px;padding:.3rem .6rem;display:inline-block;margin-bottom:1rem}
+.calcgrid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.calcpanel h3{font-family:var(--serif);font-size:15px;margin:0 0 .8rem}
+.field{margin-bottom:.9rem}
+.field label{display:block;font-size:12px;color:var(--soft);margin-bottom:.3rem}
+.field input[type=number]{width:100%;font:13.5px var(--mono);padding:.4rem .55rem;border:1px solid var(--strong);border-radius:6px;background:var(--paper);color:var(--ink)}
+.field input[type=range]{width:100%}
+.field .rangeval{font-family:var(--mono);font-size:12px;color:var(--teal-d)}
+.checkfield{display:flex;align-items:center;gap:.5rem;font-size:12.5px;color:var(--soft);margin-bottom:.9rem}
+.result{background:var(--teal-w);border-radius:8px;padding:.9rem 1rem;margin-top:.6rem}
+.result .big{font-family:var(--mono);font-size:22px;color:var(--teal-d);display:block}
+.result .note{font-size:11.5px;color:var(--soft);margin-top:.3rem}
+.combined{margin-top:1.2rem;padding-top:1.2rem;border-top:1px dashed var(--strong)}
+.combined .big{font-family:var(--mono);font-size:26px}
+.combined.net-pos{color:#1f4a1f}
+.combined.net-neg{color:#5c2323}
+.linegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.linecard{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:1.1rem}
+.linecard .n{font-family:var(--mono);font-size:11px;color:var(--teal-d)}
+.linecard h3{font-family:var(--serif);font-size:14px;margin:.3rem 0 .5rem}
+.linecard p{font-size:12.5px;color:var(--soft);margin:0}
+@media(max-width:720px){.calcgrid{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<section class="pagehead" style="border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <p class="eyebrow" data-i18n="e_eye">Economy</p>
+    <h1 data-i18n="e_h1">LVT, Dividend, Sovereign Fund</h1>
+    <p class="lead" data-i18n="e_lead">Only revenue is LVT.</p>
+    <div class="p50"><p data-i18n="e_plural">Deliberate economic choice among alternatives.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i18n-en="What LVT covers" data-i18n-ua="Що обкладається LVT" data-i18n-ru="Что облагается LVT">What LVT covers</h2>
+    <p class="section-sub" data-i18n-en="Broad Georgist definition: any resource with inelastic supply not created by the owner's labor." data-i18n-ua="Широке джорджистське визначення: будь-який ресурс з нееластичною пропозицією, не створений працею власника." data-i18n-ru="Широкое джорджистское определение: любой ресурс с неэластичным предложением, не созданный трудом владельца.">Broad Georgist definition: any resource with inelastic supply not created by the owner's labor.</p>
+    <div class="factgrid">
+      <div class="factcard"><span class="num">0.1–2.0%</span><h3 data-i18n-en="Rate corridor" data-i18n-ua="Коридор ставки" data-i18n-ru="Коридор ставки">Rate corridor</h3><p data-i18n-en="Set by the local jurisdiction/fork. Growth capped at ~+10%/year for predictability. Primary residence exempt up to a set plot size." data-i18n-ua="Встановлюється локальною юрисдикцією/форком. Ріст обмежений ~+10%/рік для передбачуваності. Основне житло звільнене до певного розміру ділянки." data-i18n-ru="Устанавливается локальной юрисдикцией/форком. Лимит роста ~+10% год к году для предсказуемости. Основное жильё освобождено на участок определённого размера.">Set by the local jurisdiction/fork. Growth capped at ~+10%/year for predictability. Primary residence exempt up to a set plot size.</p></div>
+      <div class="factcard"><span class="num">+2–3 pp</span><h3 data-i18n-en="Vacancy surcharge" data-i18n-ua="Надбавка за простій" data-i18n-ru="Надбавка за простой">Vacancy surcharge</h3><p data-i18n-en="For plots idle 6+ months — modeled on Vancouver's empty homes tax (vacancy fell from 0.9% to 0.49% by 2024)." data-i18n-ua="Для ділянок, що простоюють 6+ місяців — за зразком податку на порожнє житло у Ванкувері (вакантність впала з 0.9% до 0.49% до 2024)." data-i18n-ru="Для участков, простаивающих 6+ месяцев — по образцу налога на пустующее жильё в Ванкувере (вакантность упала с 0.9% до 0.49% к 2024).">For plots idle 6+ months — modeled on Vancouver's empty homes tax (vacancy fell from 0.9% to 0.49% by 2024).</p></div>
+      <div class="factcard"><span class="num" data-i18n-en="Yearly" data-i18n-ua="Раз на рік" data-i18n-ru="Раз в год">Yearly</span><h3 data-i18n-en="Revaluation" data-i18n-ua="Переоцінка" data-i18n-ru="Переоценка">Revaluation</h3><p data-i18n-en="CAMA methodology (global mass-appraisal standard), residual method. Explainable algorithm — shows which transactions the valuation is built on." data-i18n-ua="Методика CAMA (світовий стандарт масової оцінки), метод залишку. Пояснюваний алгоритм — показує, на яких угодах побудована оцінка." data-i18n-ru="CAMA-методика (мировой стандарт массовой оценки), метод остатка. Алгоритм объясним — показывает, на основе каких сделок построена оценка.">CAMA methodology (global mass-appraisal standard), residual method. Explainable algorithm — shows which transactions the valuation is built on.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i18n-en="What I pay / receive" data-i18n-ua="Скільки я плачу / отримую" data-i18n-ru="Сколько я плачу / получаю">What I pay / receive</h2>
+    <div class="calcwrap">
+      <span class="scenario-flag" data-i18n-en="hypothetical scenario · not a real payout forecast" data-i18n-ua="гіпотетичний сценарій · не реальний прогноз виплати" data-i18n-ru="гипотетический сценарий · не реальный прогноз выплаты">hypothetical scenario · not a real payout forecast</span>
+      <p class="section-sub" style="margin-bottom:1.2rem" data-i18n-en="OSS has no live jurisdiction with real figures yet — below is a model of the mechanics, on numbers you set yourself. The Dividend is computed by the rent-distribution rule (§3.7), not invented." data-i18n-ua="У ОСС ще немає розгорнутої юрисдикції з реальними цифрами — нижче модель механіки на числах, які задаєте ви самі. Дивіденд рахується за правилом розподілу ренти (§3.7), не вигаданий." data-i18n-ru="У ОСО нет развёрнутой юрисдикции с реальными цифрами — ниже модель механики на числах, которые вы задаёте сами. Дивиденд считается по правилу распределения ренты (§3.7), не выдумывается.">OSS has no live jurisdiction with real figures yet — below is a model of the mechanics, on numbers you set yourself. The Dividend is computed by the rent-distribution rule (§3.7), not invented.</p>
+      <div class="calcgrid">
+        <div class="calcpanel">
+          <h3 data-i18n-en="LVT on your plot" data-i18n-ua="LVT на вашій ділянці" data-i18n-ru="LVT на вашем участке">LVT on your plot</h3>
+          <div class="field"><label data-i18n-en="Unimproved land value (units)" data-i18n-ua="Оцінка голої землі (у.о.)" data-i18n-ru="Оценка голой земли (у.е.)">Unimproved land value (units)</label><input type="number" id="landValue" value="8000000" min="0"></div>
+          <div class="field"><label><span data-i18n-en="LVT rate: " data-i18n-ua="Ставка LVT: " data-i18n-ru="Ставка LVT: ">LVT rate: </span><span class="rangeval" id="rateVal">1.0%</span></label><input type="range" id="rate" min="0.1" max="2.0" step="0.1" value="1.0"></div>
+          <div class="checkfield"><input type="checkbox" id="primary" checked><label for="primary" data-i18n-en="This is my only home (auto-offset Dividend, §3.6.1)" data-i18n-ua="Це моє єдине житло (автозалік Дивіденду, §3.6.1)" data-i18n-ru="Это моё единственное жильё (автозачёт Дивиденда, §3.6.1)">This is my only home (auto-offset Dividend, §3.6.1)</label></div>
+          <div class="result"><span class="big tnum" id="lvtOut">80,000 у.е./год</span><span class="note">= оценка × ставка. До зачёта Дивиденда.</span></div>
+        </div>
+        <div class="calcpanel">
+          <h3 data-i18n-en="Dividend — distribution scenario" data-i18n-ua="Дивіденд — сценарій розподілу" data-i18n-ru="Дивиденд — сценарий распределения">Dividend — distribution scenario</h3>
+          <div class="field"><label data-i18n-en="Fork population" data-i18n-ua="Населення форку" data-i18n-ru="Население форка">Fork population</label><input type="number" id="pop" value="50000" min="1"></div>
+          <div class="field"><label data-i18n-en="Annual rent, renewables (land/spectrum), units" data-i18n-ua="Річна рента, відновлювані (земля/спектр), у.о." data-i18n-ru="Годовая рента, возобновляемые (земля/спектр), у.е.">Annual rent, renewables (land/spectrum), units</label><input type="number" id="renew" value="15000000" min="0"></div>
+          <div class="field"><label data-i18n-en="Annual rent, non-renewables (subsoil), units" data-i18n-ua="Річна рента, невідновлювані (надра), у.о." data-i18n-ru="Годовая рента, невозобновляемые (недра), у.е.">Annual rent, non-renewables (subsoil), units</label><input type="number" id="nonrenew" value="8000000" min="0"></div>
+          <div class="result"><span class="big tnum" id="divOut">252 у.е./год на человека</span><span class="note">70% возобновляемой + 30% невозобновляемой ренты → Dividend-пул (§3.7), выплата ежеквартально (§3.8, снижает поведенческие всплески — эмпирика Alaska PFD)</span></div>
+        </div>
+      </div>
+      <div class="combined" id="combinedBox">
+        <span class="eyebrow" data-i18n-en="Your net in this scenario" data-i18n-ua="Ваш підсумок у цьому сценарії" data-i18n-ru="Ваш итог в этом сценарии">Your net in this scenario</span>
+        <span class="big tnum" id="combinedOut">—</span>
+        <p class="note" id="combinedNote" style="font-size:12px;color:var(--soft)"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i18n-en="Homelessness protection — three lines" data-i18n-ua="Захист від бездомності — три лінії" data-i18n-ru="Защита от бездомности — три линии">Homelessness protection — three lines</h2>
+    <p class="section-sub" data-i18n-en="Explicit boundary: LVT may lead to a plot changing owner through sale or a lien after death, but cannot be grounds for evicting a living person." data-i18n-ua="Явна межа: LVT може призвести до переходу ділянки іншому власнику через продаж або заставу після смерті, але не може бути підставою для виселення живої людини." data-i18n-ru="Явная граница: LVT может привести к переходу земли другому владельцу через продажу или лиен после смерти, но не может быть основанием для выселения живого человека.">Explicit boundary: LVT may lead to a plot changing owner through sale or a lien after death, but cannot be grounds for evicting a living person.</p>
+    <div class="linegrid">
+      <div class="linecard"><span class="n" data-i18n-en="LINE 1" data-i18n-ua="ЛІНІЯ 1" data-i18n-ru="ЛИНИЯ 1">LINE 1</span><h3 data-i18n-en="Dividend auto-offset" data-i18n-ua="Автозалік Дивіденду" data-i18n-ru="Автозачёт Дивиденда">Dividend auto-offset</h3><p data-i18n-en="By default, no application needed. A landholder at or below the average value effectively pays nothing or is a net receiver." data-i18n-ua="За замовчуванням, без заяви. Власник ділянки не дорожче середньої фактично не платить або є чистим отримувачем." data-i18n-ru="По умолчанию, без заявления. Держатель земли не дороже среднего фактически не платит или является чистым получателем.">By default, no application needed. A landholder at or below the average value effectively pays nothing or is a net receiver.</p></div>
+      <div class="linecard"><span class="n" data-i18n-en="LINE 2" data-i18n-ua="ЛІНІЯ 2" data-i18n-ru="ЛИНИЯ 2">LINE 2</span><h3 data-i18n-en="Deferral with lien" data-i18n-ua="Відтермінування із заставою" data-i18n-ru="Отсрочка с залогом">Deferral with lien</h3><p data-i18n-en="For elderly/income-loss cases — the tax accrues as a lien at 3–6%/year, no eviction, recovered at sale/inheritance. Capped at 80% equity." data-i18n-ua="Для літніх/тих, хто втратив дохід — податок накопичується як застава під 3–6% річних, без виселення, стягується при продажу/спадкуванні. Кап — 80% equity." data-i18n-ru="Для пожилых/потерявших доход — налог копится как залог под 3–6% годовых, без выселения, взыскивается при продаже/наследовании. Кап — 80% equity.">For elderly/income-loss cases — the tax accrues as a lien at 3–6%/year, no eviction, recovered at sale/inheritance. Capped at 80% equity.</p></div>
+      <div class="linecard"><span class="n" data-i18n-en="LINE 3" data-i18n-ua="ЛІНІЯ 3" data-i18n-ru="ЛИНИЯ 3">LINE 3</span><h3 data-i18n-en="Emergency bridge" data-i18n-ua="Екстрений місток" data-i18n-ru="Экстренный мост">Emergency bridge</h3><p data-i18n-en="Short-term, interest-free loan (3–12 months) from a reserve fund for a sudden income loss, until moving to deferral." data-i18n-ua="Короткостроковий безвідсотковий кредит (3–12 міс.) з резервного фонду при раптовій втраті доходу, до переходу на deferral." data-i18n-ru="Краткосрочный кредит (3–12 мес., без начисления) из резервного фонда при внезапной потере дохода, до перехода на deferral.">Short-term, interest-free loan (3–12 months) from a reserve fund for a sudden income loss, until moving to deferral.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i18n-en="Sovereign Fund" data-i18n-ua="Суверенний фонд" data-i18n-ru="Суверенный фонд">Sovereign Fund</h2>
+    <p class="section-sub" data-i18n-en="Model: Norwegian GPFG. Four levels: Strategist (framework) → Operator (execution) → independent Ethics body (recommendations) → Executive council (decision)." data-i18n-ua="Модель — норвезький GPFG. Чотири рівні: Стратег (рамка) → Оператор (виконання) → незалежний Ethics-орган (рекомендації) → Виконавча рада (рішення)." data-i18n-ru="Модель — норвежский GPFG. Четыре уровня: Стратег (рамка) → Оператор (исполнение) → независимый Ethics-орган (рекомендации) → Исполнительный совет (решение).">Model: Norwegian GPFG. Four levels: Strategist (framework) → Operator (execution) → independent Ethics body (recommendations) → Executive council (decision).</p>
+    <div class="factgrid">
+      <div class="factcard"><span class="num">~3%</span><h3 data-i18n-en="Annual withdrawal rule" data-i18n-ua="Правило річного вилучення" data-i18n-ru="Правило годового изъятия">Annual withdrawal rule</h3><p data-i18n-en="Implements the Hartwick rule — rent from a depleting resource cannot be consumed, only converted into other capital." data-i18n-ua="Реалізація правила Хартвіка — ренту виснажуваного ресурсу не можна проїдати, лише конвертувати в інший капітал." data-i18n-ru="Реализация правила Хартвика — ренту истощаемого ресурса нельзя проедать, только конвертировать в другой капитал.">Implements the Hartwick rule — rent from a depleting resource cannot be consumed, only converted into other capital.</p></div>
+      <div class="factcard"><span class="num">0.05–0.1%</span><h3 data-i18n-en="Management cost benchmark" data-i18n-ua="Бенчмарк витрат на управління" data-i18n-ru="Бенчмарк издержек управления">Management cost benchmark</h3><p data-i18n-en="Of fund assets. Full publication of holdings, votes, reports." data-i18n-ua="Від активів фонду. Повна публікація holdings, голосувань, звітів." data-i18n-ru="От активов фонда. Полная публикация holdings, голосований, отчётов.">Of fund assets. Full publication of holdings, votes, reports.</p></div>
+      <div class="factcard"><span class="num">2/3 + 90 days</span><h3 data-i18n-en="Ethics-body suspension threshold" data-i18n-ua="Поріг призупинення Ethics-органу" data-i18n-ru="Порог приостановки Ethics-органа">Ethics-body suspension threshold</h3><p><span data-i18n-en="Not a simple majority — a 2025–2026 Norwegian precedent showed why." data-i18n-ua="Не просту більшість — норвезький прецедент 2025–2026 показав, чому." data-i18n-ru="Не простое большинство — норвежский прецедент 2025–2026 показал, зачем.">Not a simple majority — a 2025–2026 Norwegian precedent showed why.</span> <a href="open-questions.html#art-3-9" data-i18n-en="Case breakdown →" data-i18n-ua="Розбір кейсу →" data-i18n-ru="Разбор кейса →">Case breakdown →</a></p></div>
+    </div>
+  </div>
+</section>
+
+<div class="pagenav">
+  <a href="open-questions.html" data-i18n-en="← Open questions" data-i18n-ua="← Відкриті питання" data-i18n-ru="← Открытые вопросы">← Open questions</a>
+  <a href="accountability.html" data-i18n-en="Accountability →" data-i18n-ua="Підзвітність →" data-i18n-ru="Подотчётность →">Accountability →</a>
+</div>
+
+<footer data-i18n-en="Every number in the calculator above is set by you. Real rates and rent volume are set by the fork/jurisdiction at deployment." data-i18n-ua="Усі числа в калькуляторі вище задані вами. Реальні ставки й обсяг ренти визначає форк/юрисдикція під час розгортання." data-i18n-ru="Все цифры в калькуляторе выше — заданы вами. Реальные ставки и объём ренты определяются форком/юрисдикцией при развёртывании.">Every number in the calculator above is set by you. Real rates and rent volume are set by the fork/jurisdiction at deployment.</footer>
+
+<script>
+function lang(){ return localStorage.getItem('oss-lang') || 'en'; }
+const CT = {
+  en: { unit:'units/yr', perPerson:'units/yr per person', netReceiver:'Net receiver: +', topUp:'Top-up owed: ',
+    lvtNote:'= value × rate. Before Dividend offset.',
+    divNote:'70% of renewable + 30% of non-renewable rent → Dividend pool (§3.7), paid quarterly (§3.8, reduces behavioral spikes — Alaska PFD empirics)',
+    posNote:'Dividend fully covers LVT on the sole home and leaves a remainder (§3.6, line 1).',
+    negNote:'Dividend is auto-offset against LVT; the plot is above the scenario average — remainder owed.',
+    noPrimary:(v)=>'LVT '+v+' units/yr (no auto-offset — not the sole home)',
+    noPrimaryNote:'The Dividend in this scenario is still paid separately, but is not offset against LVT on a non-primary home.' },
+  ua: { unit:'од./рік', perPerson:'од./рік на людину', netReceiver:'Чистий отримувач: +', topUp:'До сплати: ',
+    lvtNote:'= оцінка × ставка. До заліку Дивіденду.',
+    divNote:'70% відновлюваної + 30% невідновлюваної ренти → пул Дивіденду (§3.7), виплата щоквартально (§3.8, знижує поведінкові сплески — емпірика Alaska PFD)',
+    posNote:'Дивіденд повністю покриває LVT на єдине житло і лишає залишок (§3.6, лінія 1).',
+    negNote:'Дивіденд зарахований проти LVT автоматично; ділянка дорожча за середню в сценарії — залишок до сплати.',
+    noPrimary:(v)=>'LVT '+v+' од./рік (без автозаліку — не єдине житло)',
+    noPrimaryNote:'Дивіденд у цьому сценарії все одно виплачується окремо, але не зараховується проти LVT на не-основне житло.' },
+  ru: { unit:'у.е./год', perPerson:'у.е./год на человека', netReceiver:'Чистый получатель: +', topUp:'К доплате: ',
+    lvtNote:'= оценка × ставка. До зачёта Дивиденда.',
+    divNote:'70% возобновляемой + 30% невозобновляемой ренты → Dividend-пул (§3.7), выплата ежеквартально (§3.8, снижает поведенческие всплески — эмпирика Alaska PFD)',
+    posNote:'Дивиденд полностью покрывает LVT на единственное жильё и оставляет остаток (§3.6, линия 1).',
+    negNote:'Дивиденд засчитан против LVT автоматически; участок дороже среднего по сценарию — остаток к оплате.',
+    noPrimary:(v)=>'LVT '+v+' у.е./год (без автозачёта — не единственное жильё)',
+    noPrimaryNote:'Дивиденд в этом сценарии всё равно выплачивается отдельно, но не засчитывается против LVT на не-основное жильё.' }
+};
+function ct(){ return CT[lang()] || CT.en; }
+function fmt(n){ return Math.round(n).toLocaleString(lang()==='ru'?'ru-RU':lang()==='ua'?'uk-UA':'en-US'); }
+function recalc(){
+  const L = ct();
+  const land = parseFloat(document.getElementById('landValue').value) || 0;
+  const rate = parseFloat(document.getElementById('rate').value) || 0;
+  document.getElementById('rateVal').textContent = rate.toFixed(1) + '%';
+  const lvt = land * (rate/100);
+  document.getElementById('lvtOut').textContent = fmt(lvt) + ' ' + L.unit;
+  document.getElementById('lvtOut').nextElementSibling.textContent = L.lvtNote;
+
+  const pop = parseFloat(document.getElementById('pop').value) || 1;
+  const renew = parseFloat(document.getElementById('renew').value) || 0;
+  const nonrenew = parseFloat(document.getElementById('nonrenew').value) || 0;
+  const dividendPool = renew * 0.70 + nonrenew * 0.30;
+  const perPerson = dividendPool / pop;
+  document.getElementById('divOut').textContent = fmt(perPerson) + ' ' + L.perPerson;
+  document.getElementById('divOut').nextElementSibling.textContent = L.divNote;
+
+  const primary = document.getElementById('primary').checked;
+  const box = document.getElementById('combinedBox');
+  const out = document.getElementById('combinedOut');
+  const note = document.getElementById('combinedNote');
+  if (primary) {
+    const net = lvt - perPerson;
+    if (net <= 0) {
+      out.textContent = L.netReceiver + fmt(-net) + ' ' + L.unit;
+      box.className = 'combined net-pos';
+      note.textContent = L.posNote;
+    } else {
+      out.textContent = L.topUp + fmt(net) + ' ' + L.unit;
+      box.className = 'combined net-neg';
+      note.textContent = L.negNote;
+    }
+  } else {
+    out.textContent = L.noPrimary(fmt(lvt));
+    box.className = 'combined';
+    note.textContent = L.noPrimaryNote;
+  }
+}
+['landValue','rate','pop','renew','nonrenew','primary'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', recalc);
+  document.getElementById(id).addEventListener('change', recalc);
+});
+recalc();
+</script>
+
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

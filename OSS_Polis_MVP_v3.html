@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSS — Polis Civic MVP v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F4EE;--raised:#FFF;--ink:#20302C;--soft:#4C5B57;--faint:#676F6B;
+  --line:#D9D4C6;--strong:#B9B2A0;--teal:#3F7268;--teal-d:#28453F;--teal-w:#E4EEEB;
+  --seal:#B7862C;--seal-w:#F7EBD4;--seal-d:#896421;--yes:#3B7A3B;--yes-w:#E7F1E5;--no:#A63A3A;--no-w:#F6E4E2;
+  --serif:'Source Serif 4',Georgia,serif;--mono:'IBM Plex Mono',monospace;--sans:Inter,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;padding:1rem 1.25rem 4rem}
+.wrap{max-width:880px;margin:0 auto}
+header{margin-bottom:1.5rem;border-bottom:1px solid var(--line);padding-bottom:1.1rem}
+.ey{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-d);margin:0 0 .3rem}
+h1{font-family:var(--serif);font-size:24px;font-weight:600;margin:0 0 .2rem}
+.sub{font-size:13.5px;color:var(--soft);max-width:580px}
+.bar{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:.4rem}
+.disc{font-size:11.5px;background:var(--teal-w);border:1px solid var(--line);border-radius:8px;padding:.7rem 1rem;margin-bottom:1rem;color:var(--soft)}
+.warn{font-size:11.5px;background:var(--seal-w);border:1px solid var(--line);border-radius:8px;padding:.65rem .9rem;margin-bottom:1rem;color:var(--ink)}
+.tabs{display:flex;gap:.35rem;margin-bottom:1rem;flex-wrap:wrap}
+.tab{font-size:12.5px;padding:.4rem .85rem;border-radius:18px;border:1px solid var(--strong);background:transparent;cursor:pointer;color:var(--ink)}
+.tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.card{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:.9rem}
+h2{font-family:var(--serif);font-size:15px;margin:0 0 .65rem}
+.stmt{border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem;margin-bottom:.65rem;background:var(--paper)}
+.stmt .t{font-size:14.5px;margin-bottom:.55rem}
+.stmt .meta{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-bottom:.4rem}
+.btns{display:flex;gap:.45rem;flex-wrap:wrap}
+button{font-family:var(--sans);font-size:12.5px;font-weight:500;border-radius:7px;padding:.45rem .85rem;cursor:pointer;border:1.5px solid var(--ink);background:var(--ink);color:#fff}
+button.yes{background:var(--yes);border-color:var(--yes)}
+button.no{background:var(--no);border-color:var(--no)}
+button.skip{background:transparent;color:#6B7280;border-color:var(--strong)}
+button.sec{background:transparent;color:var(--ink);border-color:var(--strong)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.voted{font-size:11.5px;color:var(--teal-d);font-family:var(--mono)}
+.cluster{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.65rem}
+.cl{border:1px solid var(--line);border-radius:8px;padding:.75rem;background:var(--paper)}
+.cl h3{font-size:12.5px;margin:0 0 .3rem}
+.cl .n{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.barfill{height:5px;background:var(--line);border-radius:3px;margin:.35rem 0;overflow:hidden}
+.barfill i{display:block;height:100%;background:var(--teal)}
+.idbox{font-family:var(--mono);font-size:11.5px;background:var(--paper);border:1px dashed var(--strong);border-radius:6px;padding:.55rem .75rem;margin-bottom:.75rem}
+.hidden{display:none!important}
+.note{font-size:11.5px;color:var(--faint);margin-top:1.25rem;padding-top:.85rem;border-top:1px solid var(--line)}
+input,textarea{width:100%;font:13.5px var(--sans);padding:.45rem .6rem;border:1px solid var(--strong);border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:.5rem}
+textarea{min-height:58px;resize:vertical}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;padding:.12rem .35rem;border-radius:4px;background:var(--seal-w);color:var(--seal-d)}
+.diff{border-left:3px solid var(--seal);padding:.45rem .7rem;background:var(--seal-w);border-radius:0 6px 6px 0;font-size:12.5px;margin:.5rem 0}
+.suppressed{font-size:11px;color:var(--faint);font-style:italic}
+.to-intro{font-size:12.5px;color:var(--soft);margin:-.35rem 0 .8rem;max-width:64ch}
+.gac-toggle{font-family:var(--mono);font-size:11px;color:var(--teal-d);background:none;border:none;cursor:pointer;padding:0;margin-bottom:.7rem;text-decoration:underline}
+.gac-method{display:none;font-size:12px;color:var(--soft);background:var(--paper);border:1px dashed var(--strong);border-radius:8px;padding:.7rem .9rem;margin-bottom:.9rem}
+.gac-method.open{display:block}
+.gac-method .mt{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);margin-bottom:.4rem}
+.quadgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem}
+.quad{border:1px solid var(--line);border-radius:10px;padding:.85rem;background:var(--paper)}
+.quad h3{font-size:13px;margin:0 0 .2rem;font-family:var(--serif)}
+.quad .qdesc{font-size:11px;color:var(--faint);margin-bottom:.6rem}
+.qstmt{background:var(--raised);border:1px solid var(--line);border-radius:7px;padding:.55rem .65rem;margin-bottom:.5rem;font-size:12.5px}
+.qstmt .gacrow{display:flex;align-items:center;gap:.4rem;margin-top:.4rem;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.gacbar{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.gacbar i{display:block;height:100%}
+.groupsplit{margin-top:.4rem;font-family:var(--mono);font-size:10px;color:var(--soft)}
+.clusterbox{font-size:11.5px;color:var(--soft);background:var(--teal-w);border-radius:7px;padding:.55rem .75rem;margin-bottom:.8rem}
+
+
+
+
+[data-theme="dark"]{
+  --paper:#121816;--raised:#1A221F;--ink:#E8EDE9;--soft:#A8B5AF;--faint:#80928B;
+  --line:#2A3530;--strong:#3D4A44;--teal:#5BA89A;--teal-d:#7BC4B5;--teal-w:#1A2E2A;
+  --seal:#D4A84B;--seal-w:#3A3218;--seal-d:#D4A84B;--yes:#6BC47A;--yes-w:#1A2E1F;--no:#E07A7A;--no-w:#3A1F1F;
+}
+/* ponytail: site-bar dead — site.js header */
+
+
+
+
+
+.theme-btn{font-family:var(--mono);font-size:11px;border:1px solid var(--strong);border-radius:20px;padding:.3rem .65rem;background:transparent;color:var(--soft);cursor:pointer}
+/* contrast fixes for dark */
+[data-theme="dark"] .pill{background:var(--teal-w);color:var(--teal-d);border:1px solid var(--line)}
+[data-theme="dark"] .meta{color:var(--soft)}
+[data-theme="dark"] .warn{
+  background:#2A2418;
+  border-color:#5C4A28;
+  color:#E6D5A8;
+}
+[data-theme="dark"] .disc{
+  background:var(--teal-w);
+  color:var(--soft);
+  border-color:var(--line);
+}
+[data-theme="dark"] .tab{
+  background:transparent;
+  color:var(--soft);
+  border-color:var(--strong);
+}
+[data-theme="dark"] .tab.on{
+  background:var(--teal-d);
+  color:#121816;
+  border-color:var(--teal-d);
+}
+[data-theme="dark"] .tab:not(.on):hover{
+  background:var(--raised);
+  color:var(--ink);
+}
+
+</style>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="ey" id="ey-line">OSS · TASK 5 · MVP v3</p>
+    <h1 data-i18n="polis_h1">Polis · civic layer (MVP)</h1>
+    <p class="sub" data-i18n="polis_sub">Sentiment, not deliberation</p>
+    <p class="bar">THE_BAR: Polis/vTaiwan · Principle 5.0 · simulation</p>
+  </header>
+
+  <div class="disc" data-i18n-html="1" data-i18n-en="<strong>Hard product invariants:</strong>
+    SENTIMENT_NOT_DELIBERATION (no reply, no thread, no P2P messaging) ·
+    AGGREGATES_ONLY (no individual foreign votes in UI) ·
+    MIN_N threshold before showing cluster stats ·
+    OUT_OF_SCOPE: Tiered Mandatory Response, 7.4.6, enforcement hooks" data-i18n-ua="<strong>Жорсткі продуктові інваріанти:</strong>
+    SENTIMENT_NOT_DELIBERATION (без відповіді, без треду, без P2P-повідомлень) ·
+    AGGREGATES_ONLY (індивідуальні голоси інших не показуються в UI) ·
+    поріг MIN_N перед показом кластерної статистики ·
+    OUT_OF_SCOPE: Tiered Mandatory Response, 7.4.6, enforcement hooks" data-i18n-ru="<strong>Жёсткие продуктовые инварианты:</strong>
+    SENTIMENT_NOT_DELIBERATION (нет ответа, нет треда, нет P2P-сообщений) ·
+    AGGREGATES_ONLY (индивидуальные голоса других не показываются в UI) ·
+    порог MIN_N перед показом кластерной статистики ·
+    OUT_OF_SCOPE: Tiered Mandatory Response, 7.4.6, enforcement hooks">
+    <strong>Hard product invariants:</strong>
+    SENTIMENT_NOT_DELIBERATION (no reply, no thread, no P2P messaging) ·
+    AGGREGATES_ONLY (no individual foreign votes in UI) ·
+    MIN_N threshold before showing cluster stats ·
+    OUT_OF_SCOPE: Tiered Mandatory Response, 7.4.6, enforcement hooks
+  </div>
+
+  <div class="warn" data-i18n-html="1" data-i18n-en="<strong>Privacy threat model (MVP honesty):</strong>
+    soulbound-lite = session pseudonym, <em>not</em> anonymity.
+    Linkage via timing/behavior/side-channel possible.
+    Sybil budget: one ID per browser tab — weak; production needs eligibility proof without durable identity map.
+    Inference from small aggregates is a real risk → low-count cells suppressed.
+    No cross-session correlation store in this demo (memory only).<br><br>
+    <strong>Boundary:</strong> Results are civic sentiment only — they do <em>not</em> create mandatory response, enforcement, or legal obligation. Pseudonym ≠ anonymity." data-i18n-ua="<strong>Модель загроз приватності (чесність MVP):</strong>
+    soulbound-lite = псевдонім сесії, <em>не</em> анонімність.
+    Можливий звʼязок через таймінг/поведінку/побічні канали.
+    Sybil-бюджет: один ID на вкладку браузера — слабко; продакшн потребує доказу права голосу без стійкої карти ідентичності.
+    Висновок з малих агрегатів — реальний ризик → клітинки з малою кількістю голосів приховані.
+    У цьому демо немає сховища міжсесійної кореляції (лише памʼять).<br><br>
+    <strong>Межа:</strong> результати — лише громадянський сентимент, вони <em>не</em> створюють обовʼязкову відповідь, правозастосування чи юридичне зобовʼязання. Псевдонім ≠ анонімність." data-i18n-ru="<strong>Модель угроз приватности (честность MVP):</strong>
+    soulbound-lite = псевдоним сессии, <em>не</em> анонимность.
+    Возможна связка через тайминг/поведение/побочные каналы.
+    Sybil-бюджет: один ID на вкладку браузера — слабо; продакшн требует доказательства права голоса без устойчивой карты идентичности.
+    Вывод из малых агрегатов — реальный риск → ячейки с малым числом голосов скрыты.
+    В этом демо нет хранилища межсессионной корреляции (только память).<br><br>
+    <strong>Граница:</strong> результаты — только гражданский сентимент, они <em>не</em> создают обязательный ответ, правоприменение или юридическое обязательство. Псевдоним ≠ анонимность.">
+    <strong>Privacy threat model (MVP honesty):</strong>
+    soulbound-lite = session pseudonym, <em>not</em> anonymity.
+    Linkage via timing/behavior/side-channel possible.
+    Sybil budget: one ID per browser tab — weak; production needs eligibility proof without durable identity map.
+    Inference from small aggregates is a real risk → low-count cells suppressed.
+    No cross-session correlation store in this demo (memory only).<br><br>
+    <strong>Boundary:</strong> Results are civic sentiment only — they do <em>not</em> create mandatory response, enforcement, or legal obligation. Pseudonym ≠ anonymity.
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="vote" data-i18n="polis_tab_vote">Voting</button>
+    <button class="tab" data-tab="clusters" data-i18n="polis_tab_cl">Clusters</button>
+    <button class="tab" data-tab="add" data-i18n="polis_tab_add">Add</button>
+    <button class="tab" data-tab="id" data-i18n="polis_tab_id">Identity</button>
+  </div>
+
+  <section id="tab-vote">
+    <div class="card">
+      <h2>Statements</h2>
+      <p style="font-size:12.5px;color:var(--soft);margin:-.35rem 0 .8rem" data-i18n-en="Agree / Disagree / Skip. No reply. Other people's individual votes are not shown." data-i18n-ua="Згоден / Не згоден / Пропустити. Немає відповіді. Індивідуальні голоси інших учасників не показуються." data-i18n-ru="Согласен / Не согласен / Пропустить. Нет ответа. Индивидуальные голоса других участников не показываются.">Agree / Disagree / Skip. No reply. Other people's individual votes are not shown.</p>
+      <div id="feed"></div>
+    </div>
+  </section>
+
+  <section id="tab-clusters" class="hidden">
+    <div class="card">
+      <h2 id="to-h2">Topic Overview (demo GAC)</h2>
+      <p class="to-intro" id="to-intro">Statements grouped by Group-Aware Consensus (GAC) — not raw vote share.</p>
+      <button class="gac-toggle" id="gac-toggle-btn">How GAC is computed →</button>
+      <div class="gac-method" id="gac-method">
+        <div class="mt" id="gac-method-title">Method (demo-scale)</div>
+        <div id="gac-method-body"></div>
+      </div>
+      <div class="clusterbox" id="cluster-assign"></div>
+      <div class="quadgrid" id="quadgrid"></div>
+      <div class="diff">
+        <strong>Divergence card — descriptive only</strong><br>
+        <span id="diff-text">Comparing a claimed statement to aggregated clusters. Not a normative label on participants.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-add" class="hidden">
+    <div class="card">
+      <h2>New statement</h2>
+      <textarea id="new-stmt" maxlength="140" placeholder="≤140 characters, one statement…"></textarea>
+      <div style="font-size:11px;color:var(--faint);margin-bottom:.5rem"><span id="char">0</span>/140 · not a thread, not a reply</div>
+      <button id="addBtn">Publish</button>
+    </div>
+  </section>
+
+  <section id="tab-id" class="hidden">
+    <div class="card">
+      <h2 data-i18n="polis_tab_id">Identity</h2>
+      <p style="font-size:12.5px;color:var(--soft);margin-bottom:.65rem" data-i18n-html="1" data-i18n-en="Session pseudonym only. No reverse map to phone/passport in this MVP.
+        <strong>Not a Sybil-proof credential.</strong> Production: separate eligibility proof from vote unlinkability." data-i18n-ua="Лише псевдонім сесії. Немає зворотної карти на телефон/паспорт у цьому MVP.
+        <strong>Не Sybil-захищений credential.</strong> Продакшн: доказ права голосу окремо від неможливості звʼязати голоси." data-i18n-ru="Только псевдоним сессии. Нет обратной карты на телефон/паспорт в этом MVP.
+        <strong>Не Sybil-защищённый credential.</strong> Продакшн: доказательство права голоса отдельно от невозможности связать голоса.">
+        Session pseudonym only. No reverse map to phone/passport in this MVP.
+        <strong>Not a Sybil-proof credential.</strong> Production: separate eligibility proof from vote unlinkability.
+      </p>
+      <div class="idbox" id="id-display">—</div>
+      <button class="sec" id="regen">New session ID (resets my votes)</button>
+    </div>
+  </section>
+
+  <p class="note">
+    Hard out of scope: Tiered Mandatory Response (7.4.2), leverage transparency (7.4.6), any enforcement or SLA on civic response.
+    Data: in-memory only; reload clears. No export API in MVP.
+  </p>
+</div>
+
+<script>
+const MIN_N = 3; // suppress aggregate cells below this
+const S = { id:null, statements:[], votes:{} };
+
+function lang(){ return localStorage.getItem('oss-lang') || 'en'; }
+
+const T = {
+  en: {
+    statements:'Statements', clusters:'Topic Overview (demo GAC)', divCard:'Divergence card — descriptive only',
+    newStmt:'New statement', identity:'Identity',
+    onlyAgg:'Descriptive aggregates only. Cluster ≠ personality category.',
+    cellsSuppressed:'Cells with n < MIN_N are hidden (anti-inference).',
+    diffPreset:'Comparing a claimed "official narrative" statement to aggregated clusters. Not a normative label on participants.',
+    placeholder:'≤140 characters, one statement…', notThread:'not a thread, not a reply',
+    publish:'Publish', newSession:'New session ID (resets my votes)', confirmReset:'A new session ID will reset your votes.',
+    yourVote:'your vote:', agree:'Agree', disagree:'Disagree', skip:'Skip',
+    agg:(y,n,sk,tot)=>` · aggregate +${y}/−${n}/∅${sk} (n=${tot})`, aggHidden:'aggregates hidden (n<'+MIN_N+')',
+    aClusterTitle:'A · agreement (descriptive)', bClusterTitle:'B · split (descriptive)', cClusterTitle:'C · disagreement (descriptive)',
+    stmtCount:(n)=>n+' stmts', hidden:'hidden (n<'+MIN_N+')', empty:'empty',
+    claimedThesis:'Claimed thesis (example):', claimedEx:'"Everyone supports fully automated Cat.1 rulings."',
+    descFact:'Descriptive cluster fact:', descFactBody:(n)=>`the statement about automation without a human gate is not in a stable-consensus zone (n≥${n}).`,
+    comparisonNote:'This compares a thesis to aggregates — ', notLabel:'not', comparisonEnd:' a label on participants.',
+    sessionSuffix:' · session pseudonym · not anonymity · weak Sybil',
+    toIntro:'Statements grouped by Group-Aware Consensus (GAC) — not raw vote share. A statement counts as consensus only if it holds up separately inside each opinion group, not just on average.',
+    gacToggle:'How GAC is computed →', gacTitle:'Method (demo-scale)',
+    gacBody:'Participants are split into 2 opinion groups from their vote pattern. For each statement and group: P = (1 + agree) / (2 + agree + disagree) — Laplace-smoothed so thin data defaults to uncertain, not extreme. GAC = P(group A) × P(group B) — a product, not an average, so a statement backed by only one group scores low even if the raw combined majority looks large.',
+    quadConsensus:'Consensus', quadConsensusDesc:'High GAC — holds up inside every group independently, not just on raw average.',
+    quadDivisive:'Divisive', quadDivisiveDesc:'Groups lean to opposite sides — a real fault line, not noise.',
+    quadGroupRep:'Group-representative', quadGroupRepDesc:'Distinctly held by one group while the other stays closer to undecided.',
+    quadPass:'Pass / unsure', quadPassDesc:'Too little engagement or too close to 50/50 to classify yet.',
+    gacLabel:'GAC', groupA:'Group A', groupB:'Group B', groupSuppressed:'group split hidden (n<'+MIN_N+' in a group)',
+    notClustered:'Vote on 2+ statements to see which opinion group you land closest to (demo-scale, not a personality label).',
+    clusteredAs:(g)=>`Provisionally closest to ${g}, based on shared votes so far — this can shift as you vote more.`,
+    seeds:[
+      'LVT should remain the fork\'s only tax.',
+      'Cat.1 court rulings can be fully automated without a human gate.',
+      'The right to exit matters more than fork unity.',
+      'Agents must not take RIGHTS_AFFECTING decisions without a human signature.',
+      'Influence transparency (7.4.6) is needed before the first pilot.'
+    ]
+  },
+  ua: {
+    statements:'Твердження', clusters:'Огляд тем (демо GAC)', divCard:'Картка розбіжності — лише описова',
+    newStmt:'Нове твердження', identity:'Ідентичність',
+    onlyAgg:'Лише описові агрегати. Кластер ≠ категорія особистості.',
+    cellsSuppressed:'Клітинки з n < MIN_N приховані (anti-inference).',
+    diffPreset:'Порівняння «заявленого тезису» з агрегованими кластерами. Не нормативна класифікація учасників.',
+    placeholder:'≤140 символів, одне твердження…', notThread:'не тред, не відповідь',
+    publish:'Опублікувати', newSession:'Новий session ID (скидає мої голоси)', confirmReset:'Новий session ID скине ваші голоси.',
+    yourVote:'ваш голос:', agree:'Згоден', disagree:'Не згоден', skip:'Пропустити',
+    agg:(y,n,sk,tot)=>` · агрегати +${y}/−${n}/∅${sk} (n=${tot})`, aggHidden:'агрегати приховані (n<'+MIN_N+')',
+    aClusterTitle:'A · згода (описово)', bClusterTitle:'B · розкол (описово)', cClusterTitle:'C · незгода (описово)',
+    stmtCount:(n)=>n+' твердж.', hidden:'приховано (n<'+MIN_N+')', empty:'порожньо',
+    claimedThesis:'Заявлений тезис (приклад):', claimedEx:'«Усі підтримують повністю автоматизований суд Кат.1».',
+    descFact:'Описовий факт кластерів:', descFactBody:(n)=>`твердження про автоматизацію без human gate не в зоні стійкої згоди (n≥${n}).`,
+    comparisonNote:'Це порівняння тезису з агрегатами — ', notLabel:'не', comparisonEnd:' ярлик на учасників.',
+    sessionSuffix:' · псевдонім сесії · не анонімність · слабкий Sybil',
+    toIntro:'Твердження згруповані за Group-Aware Consensus (GAC) — не за сирою часткою голосів. Твердження рахується консенсусним, лише якщо тримається окремо всередині кожної групи думок, а не тільки в середньому.',
+    gacToggle:'Як рахується GAC →', gacTitle:'Метод (демо-масштаб)',
+    gacBody:'Учасників поділено на 2 групи думок за патерном голосування. Для кожного твердження і групи: P = (1 + згоден) / (2 + згоден + не згоден) — згладжено за Лапласом, щоб мало даних за замовчуванням давало невизначеність, а не крайність. GAC = P(група A) × P(група B) — добуток, не середнє, тож твердження, яке підтримує лише одна група, отримує низький бал, навіть якщо сира сумарна більшість виглядає великою.',
+    quadConsensus:'Консенсус', quadConsensusDesc:'Високий GAC — тримається в кожній групі окремо, не лише в середньому.',
+    quadDivisive:'Розкол', quadDivisiveDesc:'Групи схиляються в протилежні боки — реальна лінія розлому, не шум.',
+    quadGroupRep:'Репрезентативне для групи', quadGroupRepDesc:'Виразно підтримується однією групою, тоді як інша ближче до невизначеності.',
+    quadPass:'Пропуск / невпевненість', quadPassDesc:'Замало залученості або надто близько до 50/50, щоб класифікувати.',
+    gacLabel:'GAC', groupA:'Група A', groupB:'Група B', groupSuppressed:'розподіл по групах приховано (n<'+MIN_N+' у групі)',
+    notClustered:'Проголосуйте за 2+ тверджень, щоб побачити, до якої групи думок ви найближчі (демо-масштаб, не ярлик особистості).',
+    clusteredAs:(g)=>`Попередньо найближче до ${g}, на основі спільних голосів дотепер — може змінитися з новими голосами.`,
+    seeds:[
+      'LVT має лишитися єдиним податком на рівні форку.',
+      'Вердикти суду Кат.1 можна повністю автоматизувати без human gate.',
+      'Право виходу важливіше за єдність форку.',
+      'Агенти не повинні приймати RIGHTS_AFFECTING рішення без підпису людини.',
+      'Прозорість впливу (7.4.6) потрібна до першого пілоту.'
+    ]
+  },
+  ru: {
+    statements:'Утверждения', clusters:'Обзор тем (демо GAC)', divCard:'Карточка расхождения — только описательно',
+    newStmt:'Новое утверждение', identity:'Идентичность',
+    onlyAgg:'Только описательные агрегаты. Кластер ≠ категория личности.',
+    cellsSuppressed:'Ячейки с n < MIN_N скрыты (anti-inference).',
+    diffPreset:'Сравнение «заявленного тезиса» с агрегированными кластерами. Не нормативная классификация участников.',
+    placeholder:'≤140 символов, одно утверждение…', notThread:'не тред, не ответ',
+    publish:'Опубликовать', newSession:'Новый session ID (сброс моих голосов)', confirmReset:'Новый session ID сбросит ваши голоса.',
+    yourVote:'ваш голос:', agree:'Согласен', disagree:'Не согласен', skip:'Пропустить',
+    agg:(y,n,sk,tot)=>` · агрегаты +${y}/−${n}/∅${sk} (n=${tot})`, aggHidden:'агрегаты скрыты (n<'+MIN_N+')',
+    aClusterTitle:'A · согласие (описательно)', bClusterTitle:'B · раскол (описательно)', cClusterTitle:'C · несогласие (описательно)',
+    stmtCount:(n)=>n+' утв.', hidden:'скрыто (n<'+MIN_N+')', empty:'пусто',
+    claimedThesis:'Заявленный тезис (пример):', claimedEx:'«Все поддерживают авто-суд Кат.1».',
+    descFact:'Описательный факт кластеров:', descFactBody:(n)=>`утверждение об автоматизации без human gate не в зоне устойчивого согласия (n≥${n}).`,
+    comparisonNote:'Это сравнение тезиса с агрегатами — ', notLabel:'не', comparisonEnd:' ярлык на участников.',
+    sessionSuffix:' · session pseudonym · не анонимность · слабый Sybil',
+    toIntro:'Утверждения сгруппированы по Group-Aware Consensus (GAC) — не по сырой доле голосов. Утверждение засчитывается как консенсусное, только если держится отдельно внутри каждой группы мнений, а не только в среднем.',
+    gacToggle:'Как считается GAC →', gacTitle:'Метод (демо-масштаб)',
+    gacBody:'Участники разделены на 2 группы мнений по паттерну голосования. Для каждого утверждения и группы: P = (1 + согласен) / (2 + согласен + не согласен) — сглажено по Лапласу, чтобы малое число голосов давало неопределённость по умолчанию, а не крайность. GAC = P(группа A) × P(группа B) — произведение, не среднее, поэтому утверждение, которое поддерживает только одна группа, получает низкий балл, даже если сырое суммарное большинство выглядит внушительным.',
+    quadConsensus:'Консенсус', quadConsensusDesc:'Высокий GAC — держится в каждой группе по отдельности, не только в среднем.',
+    quadDivisive:'Раскол', quadDivisiveDesc:'Группы склоняются в противоположные стороны — реальная линия разлома, не шум.',
+    quadGroupRep:'Репрезентативно для группы', quadGroupRepDesc:'Выраженно поддерживается одной группой, тогда как другая ближе к неопределённости.',
+    quadPass:'Пропуск / неуверенность', quadPassDesc:'Слишком мало вовлечённости или слишком близко к 50/50, чтобы классифицировать.',
+    gacLabel:'GAC', groupA:'Группа A', groupB:'Группа B', groupSuppressed:'разбивка по группам скрыта (n<'+MIN_N+' в группе)',
+    notClustered:'Проголосуйте за 2+ утверждений, чтобы увидеть, к какой группе мнений вы ближе всего (демо-масштаб, не ярлык личности).',
+    clusteredAs:(g)=>`Предварительно ближе всего к ${g}, на основе общих голосов пока что — может измениться с новыми голосами.`,
+    seeds:[
+      'LVT должен оставаться единственным налогом на уровне форка.',
+      'Судебные вердикты Кат.1 можно полностью автоматизировать без human gate.',
+      'Право выхода важнее единства форка.',
+      'Агенты не должны принимать RIGHTS_AFFECTING решения без подписи человека.',
+      'Прозрачность влияния (7.4.6) нужна до первого пилота.'
+    ]
+  }
+};
+function t(){ return T[lang()] || T.en; }
+
+function uid(){return 's-'+Math.random().toString(36).slice(2,9)}
+function sessionId(){
+  const raw='oss-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+  let h=0; for(let i=0;i<raw.length;i++) h=((h<<5)-h)+raw.charCodeAt(i)|0;
+  return 'SB-'+Math.abs(h).toString(16).toUpperCase().slice(0,10);
+}
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// --- GAC engine (demo-scale) ---
+// Synthetic participants, votes indexed by SEED statement position (0..4). 'y'/'n'/'s'(skip/no vote).
+// Two latent opinion clusters baked into the pattern on purpose, so the clustering step below has
+// something real to find — not fabricated group labels, an actual (tiny) k=2 split computed at runtime.
+const SYNTH_PARTICIPANTS = [
+  {id:'a1', votes:['y','n','y','y','s']},
+  {id:'a2', votes:['y','n','n','y','n']},
+  {id:'a3', votes:['y','n','y','y','y']},
+  {id:'a4', votes:['y','n','n','y','s']},
+  {id:'a5', votes:['y','n','y','y','s']},
+  {id:'b1', votes:['y','y','y','n','s']},
+  {id:'b2', votes:['y','y','y','y','n']},
+  {id:'b3', votes:['n','y','y','n','s']},
+  {id:'b4', votes:['y','y','y','s','y']}
+];
+function toNum(v){ return v==='y'?1:(v==='n'?-1:null); }
+function vecSimilarity(a,b){
+  let sum=0,count=0;
+  for(let i=0;i<a.length;i++){
+    if(a[i]==null||b[i]==null) continue;
+    sum+=a[i]*b[i]; count++;
+  }
+  return count===0?0:sum/count;
+}
+function meanVector(vecs, len){
+  const out=[];
+  for(let i=0;i<len;i++){
+    let sum=0,count=0;
+    vecs.forEach(v=>{ if(v[i]!=null){ sum+=v[i]; count++; } });
+    out.push(count===0?null:sum/count);
+  }
+  return out;
+}
+// k=2 clustering via maximin seeding + a few Lloyd iterations — small-n but a real algorithm, not scripted labels.
+function clusterParticipants(participants, dimCount){
+  const vecs = participants.map(p=>p.votes.slice(0,dimCount).map(toNum));
+  if(participants.length<2) return [participants.map(p=>p.id), []];
+  let minSim=Infinity, seedA=0, seedB=1;
+  for(let i=0;i<vecs.length;i++) for(let j=i+1;j<vecs.length;j++){
+    const s=vecSimilarity(vecs[i],vecs[j]);
+    if(s<minSim){ minSim=s; seedA=i; seedB=j; }
+  }
+  let centerA=vecs[seedA], centerB=vecs[seedB];
+  let groupAIdx=[], groupBIdx=[];
+  for(let iter=0; iter<4; iter++){
+    groupAIdx=[]; groupBIdx=[];
+    vecs.forEach((v,idx)=>{
+      const simA=vecSimilarity(v,centerA), simB=vecSimilarity(v,centerB);
+      (simA>=simB?groupAIdx:groupBIdx).push(idx);
+    });
+    if(groupAIdx.length===0||groupBIdx.length===0) break;
+    centerA=meanVector(groupAIdx.map(i=>vecs[i]), dimCount);
+    centerB=meanVector(groupBIdx.map(i=>vecs[i]), dimCount);
+  }
+  return [groupAIdx.map(i=>participants[i].id), groupBIdx.map(i=>participants[i].id)];
+}
+function gacForIndex(idx, groupIds, byId){
+  function stats(ids){
+    let agree=0, disagree=0;
+    ids.forEach(id=>{ const v=byId[id].votes[idx]; if(v==='y')agree++; else if(v==='n')disagree++; });
+    return {agree, disagree, total: agree+disagree};
+  }
+  const A=stats(groupIds[0]), B=stats(groupIds[1]);
+  const pA=(1+A.agree)/(2+A.agree+A.disagree);
+  const pB=B.total>=0 && groupIds[1].length>0 ? (1+B.agree)/(2+B.agree+B.disagree) : null;
+  return { pA, pB: pB, gac: pB==null?pA:pA*pB, countA:A.total, countB:B.total,
+    sizeA: groupIds[0].length, sizeB: groupIds[1].length };
+}
+function classifyQuadrant(res){
+  if(res.pB==null) return 'pass';
+  const skipRatioA = res.sizeA? 1-(res.countA/res.sizeA) : 1;
+  const skipRatioB = res.sizeB? 1-(res.countB/res.sizeB) : 1;
+  const combinedSkip = (res.sizeA+res.sizeB)? ((res.sizeA-res.countA)+(res.sizeB-res.countB))/(res.sizeA+res.sizeB) : 1;
+  const nearNeutral = Math.abs(res.pA-0.5)<0.15 && Math.abs(res.pB-0.5)<0.15;
+  if(combinedSkip>0.4 && nearNeutral) return 'pass';
+  const strongA = Math.abs(res.pA-0.5)>=0.25, strongB = Math.abs(res.pB-0.5)>=0.25;
+  const oppositeSides = (res.pA-0.5)*(res.pB-0.5) < 0;
+  if(strongA && strongB && oppositeSides) return 'divisive';
+  const commitA = Math.abs(res.pA-0.5)*2, commitB = Math.abs(res.pB-0.5)*2;
+  if(Math.abs(commitA-commitB)>=0.4) return commitA>commitB ? 'repA' : 'repB';
+  const sameDirection = (res.pA-0.5)*(res.pB-0.5) > 0;
+  if(res.gac>=0.35 && sameDirection) return 'consensus';
+  return 'pass';
+}
+function buildParticipantPool(){
+  // live user becomes an extra participant once they've voted on 2+ seed statements — same bar as the UI message.
+  const pool = SYNTH_PARTICIPANTS.map(p=>({id:p.id, votes:p.votes.slice()}));
+  const myVotes = S.seedIndex.map(id => {
+    const v = S.votes[id] && S.votes[id].byUser[S.id];
+    return v==='yes'?'y':(v==='no'?'n':'s');
+  });
+  const myVoteCount = myVotes.filter(v=>v!=='s').length;
+  if(myVoteCount>=2) pool.push({id:'__me__', votes:myVotes});
+  return { pool, myVoteCount };
+}
+
+function paintStaticLabels(){
+  const L = t();
+  document.querySelector('#tab-vote h2').textContent = L.statements;
+  $('to-h2').textContent = L.clusters;
+  $('to-intro').textContent = L.toIntro;
+  $('gac-toggle-btn').textContent = L.gacToggle;
+  $('gac-method-title').textContent = L.gacTitle;
+  $('gac-method-body').textContent = L.gacBody;
+  document.querySelector('#tab-add h2').textContent = L.newStmt;
+  document.querySelectorAll('#tab-id h2')[0].textContent = L.identity;
+  document.querySelector('.diff strong').textContent = L.divCard;
+  $('diff-text').textContent = L.diffPreset;
+  $('new-stmt').placeholder = L.placeholder;
+  document.querySelector('#tab-add div[style]').childNodes[1].textContent = '/140 · ' + L.notThread;
+  $('addBtn').textContent = L.publish;
+  $('regen').textContent = L.newSession;
+}
+
+function init(){
+  S.id=sessionId();
+  paintStaticLabels();
+  $('id-display').textContent=S.id+t().sessionSuffix;
+  S.seedIndex=[];
+  t().seeds.forEach(txt=>{
+    const id=uid();
+    S.statements.push({id,text:txt});
+    S.votes[id]={yes:0,no:0,skip:0,byUser:{}};
+    S.seedIndex.push(id);
+  });
+  // synthetic other participants (demo only) — enough to pass MIN_N; same source vectors feed both
+  // the simple per-statement yes/no counters below AND the GAC engine (SYNTH_PARTICIPANTS) used in Topic Overview.
+  SYNTH_PARTICIPANTS.forEach(p=>{
+    S.seedIndex.forEach((sid,si)=>{
+      const v=p.votes[si];
+      if(v==='y') S.votes[sid].yes++;
+      else if(v==='n') S.votes[sid].no++;
+      else S.votes[sid].skip++;
+    });
+  });
+  renderFeed(); renderTopicOverview();
+}
+
+document.querySelectorAll('.tab').forEach(tb=>{
+  tb.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    tb.classList.add('on');
+    ['vote','clusters','add','id'].forEach(n=>{
+      $( 'tab-'+n).classList.toggle('hidden', n!==tb.dataset.tab);
+    });
+    if(tb.dataset.tab==='clusters') renderTopicOverview();
+  };
+});
+
+function renderFeed(){
+  const L = t();
+  $('feed').innerHTML=S.statements.map(st=>{
+    const v=S.votes[st.id];
+    const my=v.byUser[S.id];
+    const total=v.yes+v.no+v.skip;
+    const showAgg = total>=MIN_N;
+    return `<div class="stmt">
+      <div class="meta">${st.id} · ≤140 · <span class="pill">no reply · sentiment only</span></div>
+      <div class="t">${esc(st.text)}</div>
+      ${my
+        ? `<div class="voted">${L.yourVote} ${my==='yes'?L.agree:my==='no'?L.disagree:L.skip}
+            ${showAgg?L.agg(v.yes,v.no,v.skip,total):` · <span class="suppressed">${L.aggHidden}</span>`}</div>`
+        : `<div class="btns">
+            <button class="yes" onclick="vote('${st.id}','yes')">${L.agree}</button>
+            <button class="no" onclick="vote('${st.id}','no')">${L.disagree}</button>
+            <button class="skip" onclick="vote('${st.id}','skip')">${L.skip}</button>
+          </div>`}
+    </div>`;
+  }).join('');
+}
+
+function vote(sid,val){
+  const v=S.votes[sid];
+  if(v.byUser[S.id]) return;
+  v.byUser[S.id]=val; v[val]++;
+  renderFeed(); renderTopicOverview();
+}
+
+function renderTopicOverview(){
+  const L = t();
+  const { pool, myVoteCount } = buildParticipantPool();
+  const byId = {}; pool.forEach(p=>byId[p.id]=p);
+  const groupIds = clusterParticipants(pool, S.seedIndex.length);
+  const iAmIn = groupIds[0].includes('__me__') ? 0 : (groupIds[1].includes('__me__') ? 1 : -1);
+
+  $('cluster-assign').innerHTML = myVoteCount<2
+    ? L.notClustered
+    : L.clusteredAs(iAmIn===0 ? L.groupA : (iAmIn===1 ? L.groupB : L.groupA));
+
+  const buckets = { consensus:[], divisive:[], repA:[], repB:[], pass:[] };
+  S.statements.forEach(st=>{
+    // only seed statements have synthetic data; user-added statements have none yet →
+    // sparse data → correctly falls into 'pass' rather than a fabricated classification.
+    const idx = S.seedIndex.indexOf(st.id);
+    if(idx===-1){ buckets.pass.push({st, res:null}); return; }
+    const res = gacForIndex(idx, groupIds, byId);
+    const k = classifyQuadrant(res);
+    buckets[k].push({st, res});
+  });
+
+  const quads = [
+    {k:'consensus', title:L.quadConsensus, desc:L.quadConsensusDesc, col:'var(--yes)'},
+    {k:'divisive', title:L.quadDivisive, desc:L.quadDivisiveDesc, col:'var(--no)'},
+    {k:'repA', title:L.quadGroupRep+' — '+L.groupA, desc:L.quadGroupRepDesc, col:'var(--teal)'},
+    {k:'repB', title:L.quadGroupRep+' — '+L.groupB, desc:L.quadGroupRepDesc, col:'var(--teal-d)'},
+    {k:'pass', title:L.quadPass, desc:L.quadPassDesc, col:'var(--faint)'}
+  ];
+  $('quadgrid').innerHTML = quads.map(q=>{
+    const items = buckets[q.k];
+    const body = items.length ? items.map(x=>{
+      const short = esc(x.st.text.slice(0,72))+(x.st.text.length>72?'…':'');
+      if(!x.res) return `<div class="qstmt">${short}</div>`;
+      const r=x.res;
+      const suppressA = r.sizeA>0 && r.countA<MIN_N, suppressB = r.sizeB>0 && r.countB<MIN_N;
+      const pct = Math.round(r.gac*100);
+      const split = suppressA||suppressB
+        ? L.groupSuppressed
+        : `${L.groupA}: ${(r.pA*100).toFixed(0)}%` + (r.pB!=null?` · ${L.groupB}: ${(r.pB*100).toFixed(0)}%`:'');
+      return `<div class="qstmt">${short}
+        <div class="gacrow"><span class="tnum">${L.gacLabel} ${pct}%</span><div class="gacbar"><i style="width:${pct}%;background:${q.col}"></i></div></div>
+        <div class="groupsplit tnum">${split}</div>
+      </div>`;
+    }).join('') : `<div class="suppressed">${L.empty}</div>`;
+    return `<div class="quad"><h3 style="color:${q.col}">${q.title}</h3><div class="qdesc">${q.desc}</div>${body}</div>`;
+  }).join('');
+
+  $('diff-text').innerHTML=
+    `<em>${L.claimedThesis}</em> ${L.claimedEx}<br>
+     <em>${L.descFact}</em> ${L.descFactBody(MIN_N)}
+     ${L.comparisonNote}<strong>${L.notLabel}</strong>${L.comparisonEnd}`;
+}
+$('gac-toggle-btn').onclick = () => $('gac-method').classList.toggle('open');
+
+
+$('new-stmt').oninput=function(){$('char').textContent=this.value.length};
+$('addBtn').onclick=()=>{
+  const val=$('new-stmt').value.trim();
+  if(!val||val.length>140) return;
+  const id=uid();
+  S.statements.unshift({id,text:val});
+  S.votes[id]={yes:0,no:0,skip:0,byUser:{}};
+  $('new-stmt').value='';$('char').textContent='0';
+  document.querySelector('.tab[data-tab="vote"]').click();
+  renderFeed();
+};
+$('regen').onclick=()=>{
+  if(!confirm(t().confirmReset)) return;
+  Object.keys(S.votes).forEach(sid=>{
+    const v=S.votes[sid], old=v.byUser[S.id];
+    if(old){v[old]--; delete v.byUser[S.id]}
+  });
+  S.id=sessionId();
+  $('id-display').textContent=S.id+t().sessionSuffix;
+  renderFeed(); renderTopicOverview();
+};
+init();
+</script>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Public memory — OSS</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+:root{
+  --paper:#F6F4EE;--raised:#FFF;--ink:#20302C;--soft:#4C5B57;--faint:#676F6B;
+  --line:#D9D4C6;--strong:#B9B2A0;--teal:#3F7268;--teal-d:#28453F;--teal-w:#E4EEEB;
+  --seal:#B7862C;--seal-w:#F7EBD4;--seal-d:#896421;
+  --serif:'Source Serif 4',Georgia,serif;--mono:'IBM Plex Mono',monospace;--sans:Inter,sans-serif;
+}
+[data-theme="dark"]{
+  --paper:#121816;--raised:#1A221F;--ink:#E8EDE9;--soft:#A8B5AF;--faint:#80928B;
+  --line:#2A3530;--strong:#3D4A44;--teal:#5BA89A;--teal-d:#7BC4B5;--teal-w:#1A2E2A;
+  --seal:#D4A84B;--seal-w:#3A3218;--seal-d:#D4A84B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2.5rem}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-d)}
+h1{font-family:var(--serif);font-size:clamp(24px,3.5vw,34px);margin:.35rem 0 .45rem}
+.lead{color:var(--soft);font-size:14px;max-width:72ch;margin:0 0 .75rem}
+.note{font-size:12px;color:var(--faint);border-left:3px solid var(--teal);padding:.5rem .8rem;background:var(--teal-w);border-radius:0 8px 8px 0;margin-bottom:1rem;max-width:74ch}
+.layers{display:flex;flex-wrap:wrap;gap:.5rem 1rem;margin:0 0 .85rem;font-size:12.5px}
+.layers label{display:flex;align-items:center;gap:.4rem;cursor:pointer;color:var(--soft)}
+.layers input{accent-color:var(--teal)}
+.stage{display:grid;grid-template-columns:1fr 270px;gap:1rem}
+@media(max-width:860px){.stage{grid-template-columns:1fr}}
+.viewport{position:relative;background:var(--raised);border:1px solid var(--line);border-radius:12px;min-height:440px;overflow:hidden;touch-action:none}
+canvas#space{width:100%;height:440px;display:block;cursor:grab}
+canvas#space.drag{cursor:grabbing}
+.hud{position:absolute;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:.45rem 1rem;pointer-events:none;font-size:11px;color:var(--soft)}
+.hud b{font-family:var(--mono);color:var(--ink);font-weight:500}
+.side{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.5rem;max-height:540px}
+.side h2{font-family:var(--serif);font-size:15px;margin:0}
+.side .sub{font-size:12px;color:var(--soft);margin:0}
+.evlist{overflow:auto;flex:1;min-height:100px}
+.ev{border:1px solid var(--line);border-radius:8px;padding:.4rem .5rem;margin-bottom:.35rem;cursor:pointer;font-size:12px}
+.ev:hover,.ev.on{border-color:var(--teal);background:var(--teal-w)}
+.ev .t{font-family:var(--mono);font-size:10px;color:var(--teal-d)}
+.scrub{margin-top:.85rem;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:.75rem 1rem 1rem}
+.scrub-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.scrub label{font-family:var(--mono);font-size:11px;color:var(--soft);min-width:4rem}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--teal)}
+.tickrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:.25rem}
+.section{margin-top:1.35rem}
+.section h2{font-family:var(--serif);font-size:18px;margin:0 0 .35rem}
+.section .sub{font-size:13px;color:var(--soft);margin:0 0 .75rem;max-width:70ch}
+.omap{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
+.omap-grid{display:grid;grid-template-columns:1.4fr 0.9fr;gap:1.1rem}
+@media(max-width:900px){.omap-grid{grid-template-columns:1fr}}
+.omap-canvas{
+  position:relative;height:420px;background:#0b0f14;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+}
+[data-theme="light"] .omap-canvas, :root:not([data-theme="dark"]) .omap-canvas{background:#0b0f14}
+.hull{position:absolute;border-radius:40%;opacity:.2;pointer-events:none}
+.person{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);opacity:.85}
+.person.face{width:22px;height:22px;border-radius:50%;background:#cfd6dd;border:1px solid #889;font-size:11px;display:flex;align-items:center;justify-content:center}
+.me{
+  position:absolute;width:22px;height:22px;border-radius:50%;transform:translate(-50%,-50%);
+  background:#2F6FD0;border:3px solid #fff;box-shadow:0 0 0 2px #2F6FD0;z-index:5;
+}
+.grp-label{position:absolute;font-family:var(--mono);font-size:11px;color:#e8eef3;background:rgba(0,0,0,.45);padding:.15rem .4rem;border-radius:4px;z-index:4}
+.vote-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:.75rem .85rem;margin-bottom:.65rem}
+.vote-card .q{font-size:13.5px;color:var(--ink);margin-bottom:.5rem;line-height:1.4}
+.vote-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+.vote-actions button{font-size:12px;padding:.4rem .65rem;border-radius:8px;border:1px solid var(--strong);background:transparent;color:var(--soft);cursor:pointer}
+.vote-actions button.yes{border-color:#2F6F4E;color:#2F6F4E}
+.vote-actions button.no{border-color:#A63A3A;color:#A63A3A}
+.vote-actions button.on-yes{background:#2F6F4E;color:#fff;border-color:#2F6F4E}
+.vote-actions button.on-no{background:#A63A3A;color:#fff;border-color:#A63A3A}
+.vote-actions button.on-skip{background:var(--ink);color:var(--paper)}
+.bar-mini{height:8px;border-radius:4px;background:var(--line);overflow:hidden;display:flex;margin-top:.35rem}
+.bar-mini i{display:block;height:100%}
+.beeswarm{position:relative;height:100px;margin:.9rem 0 .35rem;border-bottom:1px solid var(--line);background:var(--paper);border-radius:8px;border:1px solid var(--line)}
+.bee{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--ink);bottom:12px;transform:translateX(-50%);cursor:default}
+.bee-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--soft);font-weight:500;margin-top:.25rem}
+.gac-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+.gac-chip{font-family:var(--mono);font-size:10px;padding:.2rem .45rem;border-radius:99px;border:1px solid var(--line);color:var(--soft)}
+.gac-chip.hi{background:rgba(47,111,78,.15);color:#2F6F4E;border-color:#2F6F4E}
+.gac-chip.lo{background:rgba(166,58,58,.12);color:#A63A3A;border-color:#A63A3A}
+
+footer{font-size:11.5px;color:var(--faint);margin-top:1.25rem}
+.brief{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem;margin-top:1.25rem}
+.brief h2{font-family:var(--serif);font-size:18px;margin:0 0 .35rem}
+.brief .tag{font-family:var(--mono);font-size:10px;color:var(--seal-d);letter-spacing:.04em;text-transform:uppercase}
+.brief .body{font-size:14px;color:var(--soft);line-height:1.65;margin:.65rem 0}
+.brief .body p{margin:0 0 .65rem}
+.brief .facts{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:.65rem;margin-top:.5rem}
+.brief .facts li{margin:.25rem 0}
+.brief .warn{font-size:12.5px;background:var(--seal-w);border-left:3px solid var(--seal);padding:.55rem .75rem;border-radius:0 8px 8px 0;color:var(--soft);margin-top:.75rem}
+
+.legend-row{display:flex;flex-wrap:wrap;gap:.5rem .9rem;font-size:11px;color:var(--soft);margin:.4rem 0 .6rem}
+.legend-row span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+.l-inst::before{background:#3F7268}.l-rep::before{background:#B7862C}.l-polis::before{background:#2F6FD0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow" data-i18n-en="Data sphere · prototype" data-i18n-ua="Сфера даних · прототип" data-i18n-ru="Сфера данных · прототип">Data sphere · prototype</p>
+  <h1 data-i18n-en="Public memory" data-i18n-ua="Публічна памʼять" data-i18n-ru="Публичная память">Public memory</h1>
+  <p class="lead" data-i18n-en="Network + time tracks institutions, reputation ties of public figures, and Polis discussion density around decisions. Layers can be toggled. Below: vote spectrum from civic sentiment (Polis MVP style)." data-i18n-ua="Мережа + час: інститути, репутаційні звʼязки публічних осіб і щільність обговорень Polis навколо рішень. Шари вмикаються окремо. Нижче — спектр голосів (стиль Polis MVP)." data-i18n-ru="Сеть + время: институты, репутационные связи публичных лиц и плотность обсуждений Polis вокруг решений. Слои включаются отдельно. Ниже — спектр голосов (стиль Polis MVP).">Network + time tracks institutions, reputation ties of public figures, and Polis discussion density around decisions. Layers can be toggled. Below: vote spectrum from civic sentiment (Polis MVP style).</p>
+  <div class="note" data-i18n-en="Demo · synthetic data · observation only (Art. VI) — no enforcement from this view. Feeds the rating system's dated action log (5.1), not a live score." data-i18n-ua="Демо · синтетика · лише observation (Ст. VI). Живить лог датованих дій рейтингової системи (5.1), не live-скор." data-i18n-ru="Демо · синтетика · только observation (Ст. VI). Питает лог датированных действий рейтинговой системы (5.1), не live-скор.">Demo · synthetic data · observation only (Art. VI) — no enforcement from this view. Feeds the rating system's dated action log (5.1), not a live score.</div>
+  <div class="note" style="border-left-color:var(--teal)" data-i18n-en="Boundary (Art. 7.4.3): an official acting in public capacity is not a third party — their public activity is visible by design, verified against the Ukrainian e-declaration model. Protection applies only to the graph structure around people who never gave Genesis consent (e.g. a spouse or child) — their raw personal data is not published, even where a tie exists." data-i18n-ua="Межа (Ст. 7.4.3): чиновник при виконанні публічних функцій — не третя особа, його публічна діяльність видима за задумом (модель українського е-декларування). Захист стосується лише структури графа навколо тих, хто не давав Генезис-згоди (напр. подружжя, діти) — їхні сирі персональні дані не публікуються, навіть якщо звʼязок існує." data-i18n-ru="Граница (Ст. 7.4.3): чиновник при исполнении публичных функций — не третье лицо, его публичная деятельность видима по замыслу (модель украинского е-декларирования). Защита касается только структуры графа вокруг тех, кто не давал Генезис-согласия (напр. супруг(а), дети) — их сырые персональные данные не публикуются, даже если связь существует.">Boundary (Art. 7.4.3): an official acting in public capacity is not a third party — their public activity is visible by design, verified against the Ukrainian e-declaration model. Protection applies only to the graph structure around people who never gave Genesis consent (e.g. a spouse or child) — their raw personal data is not published, even where a tie exists.</div>
+
+  <div class="layers">
+    <label class="l-inst"><input type="checkbox" id="lay-inst" checked> <span data-i18n-en="Institutions &amp; state development" data-i18n-ua="Інститути та розвиток апарату" data-i18n-ru="Институты и развитие аппарата">Institutions &amp; state development</span></label>
+    <label class="l-rep"><input type="checkbox" id="lay-rep" checked> <span data-i18n-en="Reputation ties (deputy ↔ officials / business)" data-i18n-ua="Репутаційні звʼязки (депутат ↔ чиновники / бізнес)" data-i18n-ru="Репутационные связи (депутат ↔ чиновники / бизнес)">Reputation ties (deputy ↔ officials / business)</span></label>
+    <label class="l-polis"><input type="checkbox" id="lay-polis" checked> <span data-i18n-en="Polis discussion density" data-i18n-ua="Щільність обговорень Polis" data-i18n-ru="Плотность обсуждений Polis">Polis discussion density</span></label>
+  </div>
+  <div class="legend-row">
+    <span class="l-inst" data-i18n-en="Institutions" data-i18n-ua="Інститути" data-i18n-ru="Институты">Institutions</span>
+    <span class="l-rep" data-i18n-en="Reputation" data-i18n-ua="Репутація" data-i18n-ru="Репутация">Reputation</span>
+    <span class="l-polis" data-i18n-en="Polis cloud" data-i18n-ua="Хмара Polis" data-i18n-ru="Облако Polis">Polis cloud</span>
+  </div>
+
+  <div class="stage">
+    <div class="viewport">
+      <canvas id="space" width="800" height="440"></canvas>
+      <div class="hud">
+        <span data-i18n-en="Drag orbit · scroll zoom" data-i18n-ua="Орбіта · зум" data-i18n-ru="Орбита · зум">Drag orbit · scroll zoom</span>
+        <span><b id="tlabel">t = 1.00</b></span>
+        <span id="sel-label"></span>
+      </div>
+    </div>
+    <aside class="side">
+      <h2 data-i18n-en="Events" data-i18n-ua="Події" data-i18n-ru="События">Events</h2>
+      <p class="sub" id="side-sub" data-i18n-en="Click a node or scrub time." data-i18n-ua="Вузол або повзунок часу." data-i18n-ru="Узел или ползунок времени.">Click a node or scrub time.</p>
+      <div class="evlist" id="evlist"></div>
+    </aside>
+  </div>
+
+  <div class="scrub">
+    <div class="scrub-row">
+      <label for="time" data-i18n-en="Time" data-i18n-ua="Час" data-i18n-ru="Время">Time</label>
+      <input type="range" id="time" min="0" max="100" value="100" step="1">
+      <button type="button" id="btn-play" style="font-size:12px;padding:.3rem .6rem;border-radius:8px;border:1px solid var(--strong);background:transparent;color:var(--soft);cursor:pointer" data-i18n-en="Play" data-i18n-ua="Пуск" data-i18n-ru="Пуск">Play</button>
+    </div>
+    <div class="tickrow"><span>t0</span><span>ties form</span><span>debates</span><span>now</span></div>
+  </div>
+
+  <!-- Polis vote spectrum (was embedding) -->
+  
+  <div class="section">
+    <h2 data-i18n-en="Opinion map (Polis-style)" data-i18n-ua="Карта думок (стиль Polis)" data-i18n-ru="Карта мнений (стиль Polis)">Opinion map (Polis-style)</h2>
+    <p class="sub" data-i18n-en="Live participant map (groups A–D), statement voting, and consensus→divisive beeswarm. Your blue avatar moves as you vote. Tied to the selected Polis cloud on Network + time." data-i18n-ua="Жива карта учасників (групи A–D), голосування за твердження та вісь консенсус→розкол. Синій аватар рухається під час голосування." data-i18n-ru="Живая карта участников (группы A–D), голосование по утверждениям и ось консенсус→раскол. Синий аватар движется при голосовании.">Live participant map (groups A–D), statement voting, and consensus→divisive beeswarm. Your blue avatar moves as you vote. Tied to the selected Polis cloud on Network + time.</p>
+    <div class="omap">
+      <div class="omap-grid">
+        <div>
+          <div class="omap-canvas" id="omap"></div>
+          <div class="beeswarm" id="beeswarm" title="Consensus left → divisive right"></div>
+          <div class="bee-labels"><span data-i18n-en="Consensus statements" data-i18n-ua="Консенсусні" data-i18n-ru="Консенсусные">Consensus statements</span><span data-i18n-en="Divisive statements" data-i18n-ua="Раскольні" data-i18n-ru="Раскалывающие">Divisive statements</span></div>
+          <div class="gac-row" id="gac-row"></div>
+        </div>
+        <div>
+          <div class="vote-card">
+            <div class="q" id="vote-q">—</div>
+            <div class="vote-actions" id="vote-actions"></div>
+            <div style="font-size:11px;color:var(--faint);margin-top:.45rem" id="vote-progress">—</div>
+          </div>
+          <div id="stmt-bars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="brief" id="ai-brief">
+    <div class="tag" data-i18n-en="Plain-language briefing · observation only" data-i18n-ua="Пояснення простою мовою · лише спостереження" data-i18n-ru="Пояснение простым языком · только наблюдение">Plain-language briefing · observation only</div>
+    <h2 data-i18n-en="What is going on here?" data-i18n-ua="Що тут відбувається?" data-i18n-ru="Что здесь происходит?">What is going on here?</h2>
+    <div class="body" id="brief-body"></div>
+    <ul class="facts" id="brief-facts"></ul>
+    <div class="warn" id="brief-warn" data-i18n-en="This text does not tell you how to vote or whom to trust. It only maps public facts and discussion signals so the situation is easier to follow." data-i18n-ua="Цей текст не каже, як голосувати і кому довіряти. Він лише збирає публічні факти й сигнали обговорення, щоб ситуацію було легше зрозуміти." data-i18n-ru="Этот текст не говорит, как голосовать и кому доверять. Он лишь собирает публичные факты и сигналы обсуждения, чтобы ситуацию было легче понять.">This text does not tell you how to vote or whom to trust. It only maps public facts and discussion signals so the situation is easier to follow.</div>
+  </div>
+
+  <footer data-i18n-en="Prototype · public memory + civic spectrum · feeds the ratings module (Art. 5.1)" data-i18n-ua="Прототип · публічна памʼять + громадянський спектр · живить модуль рейтингів (Ст. 5.1)" data-i18n-ru="Прототип · публичная память + гражданский спектр · питает модуль рейтингов (Ст. 5.1)">Prototype · public memory + civic spectrum · feeds the ratings module (Art. 5.1)</footer>
+</div>
+<script src="assets/site.js" defer></script>
+<script>
+(function(){
+  const inst = [
+    {id:'core', label:'Core', layer:'inst', birth:0.00, home:[-1.1,0.1,0], color:'#3F7268'},
+    {id:'court', label:'Court', layer:'inst', birth:0.18, home:[0.8,-0.2,0.3], color:'#2A9A6A'},
+    {id:'fund', label:'Fund', layer:'inst', birth:0.28, home:[-0.4,-0.9,0.2], color:'#1A9AAD'},
+    {id:'mem', label:'Memory', layer:'inst', birth:0.36, home:[0.1,0.7,-0.5], color:'#4E8FF7'}
+  ];
+  const rep = [
+    {id:'dep', label:'Deputy D', layer:'rep', birth:0.08, home:[0.2,0.3,0.8], color:'#B7862C'},
+    {id:'min', label:'Minister', layer:'rep', birth:0.12, home:[0.9,0.6,0.5], color:'#C4A035'},
+    {id:'biz', label:'Holding X', layer:'rep', birth:0.16, home:[1.2,-0.5,0.6], color:'#A67C1A'},
+    {id:'olig', label:'Oligarch Y', layer:'rep', birth:0.22, home:[0.5,-0.2,1.1], color:'#8B6914'},
+    {id:'ngo', label:'Watch NGO', layer:'rep', birth:0.30, home:[-0.7,0.5,0.7], color:'#D4A84B'},
+    {id:'off', label:'Official Z', layer:'rep', birth:0.32, home:[0.7,0.9,0.9], color:'#C44A5E'},
+    {id:'bail', label:'Bail (opaque)', layer:'rep', birth:0.40, home:[0.95,0.75,1.0], color:'#E07A7A'}
+  ];
+  // Polis clouds: earlier birth + stay forever once appeared (append-only memory)
+  const polisCloud = [
+    {id:'p2', label:'Polis: LVT', layer:'polis', birth:0.14, home:[-0.9,-0.6,-0.4], color:'#4E8FF7', dens:0.55, topic:'lvt'},
+    {id:'p1', label:'Polis: logs 72h', layer:'polis', birth:0.24, home:[-0.2,-0.3,-0.9], color:'#2F6FD0', dens:0.65, topic:'logs'},
+    {id:'p3', label:'Polis: deputy ties', layer:'polis', birth:0.34, home:[0.4,0.2,-1.0], color:'#5B9BD5', dens:0.8, topic:'ties'},
+    {id:'p4', label:'Polis: opaque bail', layer:'polis', birth:0.42, home:[0.85,0.55,-0.7], color:'#E0637A', dens:0.95, topic:'bail'}
+  ];
+  const links = [
+    {a:'court',b:'core',t:0.20,layer:'inst'},{a:'fund',b:'core',t:0.30,layer:'inst'},
+    {a:'mem',b:'core',t:0.38,layer:'inst'},{a:'mem',b:'court',t:0.40,layer:'inst'},
+    {a:'dep',b:'min',t:0.14,layer:'rep'},{a:'dep',b:'biz',t:0.20,layer:'rep'},
+    {a:'biz',b:'olig',t:0.26,layer:'rep'},{a:'dep',b:'olig',t:0.32,layer:'rep'},
+    {a:'ngo',b:'dep',t:0.34,layer:'rep'},{a:'off',b:'min',t:0.36,layer:'rep'},
+    {a:'bail',b:'off',t:0.42,layer:'rep'},{a:'bail',b:'biz',t:0.48,layer:'rep'},
+    {a:'p2',b:'fund',t:0.16,layer:'polis'},{a:'p1',b:'dep',t:0.26,layer:'polis'},
+    {a:'p3',b:'dep',t:0.36,layer:'polis'},{a:'p3',b:'olig',t:0.40,layer:'polis'},
+    {a:'p4',b:'off',t:0.44,layer:'polis'},{a:'p4',b:'bail',t:0.46,layer:'polis'}
+  ];
+  const events = [
+    {t:0.00,who:'core',layer:'inst',text:'Core published'},
+    {t:0.08,who:'dep',layer:'rep',text:'Deputy D enters register'},
+    {t:0.14,who:'p2',layer:'polis',text:'Polis cloud: LVT statements'},
+    {t:0.20,who:'dep',layer:'rep',text:'Deputy ↔ Holding X edge'},
+    {t:0.24,who:'p1',layer:'polis',text:'Polis cloud: meeting logs'},
+    {t:0.32,who:'off',layer:'rep',text:'Official Z under investigation'},
+    {t:0.34,who:'p3',layer:'polis',text:'Polis cloud: deputy ties'},
+    {t:0.40,who:'bail',layer:'rep',text:'Bail posted — payer not attributed'},
+    {t:0.42,who:'p4',layer:'polis',text:'Polis density spike: opaque bail'},
+    {t:0.48,who:'bail',layer:'rep',text:'Possible edge Bail ↔ Holding X'}
+  ];
+
+  const TOPICS = {
+    bail: {
+      en:{title:'Opaque bail',desc:'Many wordings about bail, banks, and equal rules.'},
+      ua:{title:'Непрозора застава',desc:'Багато формулювань про заставу, банки й рівні правила.'},
+      ru:{title:'Непрозрачный залог',desc:'Много формулировок о залоге, банках и равных правилах.'},
+      stmts:[
+        {id:'b1',en:'Bail payment paths for officials should be fully public.',ua:'Шлях оплати застави для посадовців має бути публічним.',ru:'Путь оплаты залога для должностных лиц должен быть публичным.',gac:0.78,kind:'bridge'},
+        {id:'b2',en:'Unknown payer should block release on bail.',ua:'Невідомий платник має блокувати звільнення під заставу.',ru:'Неизвестный плательщик должен блокировать освобождение под залог.',gac:0.22,kind:'divisive'},
+        {id:'b3',en:'Banks must flag large third-party bail transfers.',ua:'Банки мають позначати великі сторонні перекази застави.',ru:'Банки должны отмечать крупные сторонние переводы залога.',gac:0.71,kind:'bridge'},
+        {id:'b4',en:'Criticism of this official is only political persecution.',ua:'Критика цього чиновника — лише політичне переслідування.',ru:'Критика этого чиновника — только политическое преследование.',gac:0.12,kind:'divisive'},
+        {id:'b5',en:'Equal procedure matters more than popularity.',ua:'Рівна процедура важливіша за популярність.',ru:'Равная процедура важнее популярности.',gac:0.82,kind:'bridge'}
+      ]
+    },
+    logs:{
+      en:{title:'Meeting logs 72h',desc:'Statements on publishing official–business meetings.'},
+      ua:{title:'Журнали 72г',desc:'Твердження про публікацію зустрічей.'},
+      ru:{title:'Журналы 72ч',desc:'Утверждения о публикации встреч.'},
+      stmts:[
+        {id:'l1',en:'Deputy–business meetings should be logged within 72h.',ua:'Зустрічі депутат–бізнес — журнал за 72г.',ru:'Встречи депутат–бизнес — журнал за 72ч.',gac:0.74,kind:'bridge'},
+        {id:'l2',en:'Logging will paralyze politics.',ua:'Журналювання паралізує політику.',ru:'Журналирование парализует политику.',gac:0.25,kind:'divisive'},
+        {id:'l3',en:'Security talks may use delayed disclosure.',ua:'Питання безпеки — відкладене розкриття.',ru:'Вопросы безопасности — отложенное раскрытие.',gac:0.66,kind:'bridge'},
+        {id:'l4',en:'Only the opposition must publish meetings.',ua:'Лише опозиція має публікувати зустрічі.',ru:'Только оппозиция должна публиковать встречи.',gac:0.10,kind:'divisive'}
+      ]
+    },
+    lvt:{
+      en:{title:'LVT rate',desc:'Nuanced land-tax statements.'},
+      ua:{title:'Ставка LVT',desc:'Нюанси земельного податку.'},
+      ru:{title:'Ставка LVT',desc:'Нюансы земельного налога.'},
+      stmts:[
+        {id:'v1',en:'Primary homes deserve higher effective relief.',ua:'Основне житло — вища пільга.',ru:'Основное жильё — более высокая льгота.',gac:0.70,kind:'bridge'},
+        {id:'v2',en:'LVT should be zero on all private land.',ua:'LVT = 0 на всій приватній землі.',ru:'LVT = 0 на всей частной земле.',gac:0.15,kind:'divisive'},
+        {id:'v3',en:'Vacant urban plots may carry a surcharge.',ua:'Порожні міські ділянки — надбавка.',ru:'Пустующие городские участки — надбавка.',gac:0.60,kind:'bridge'}
+      ]
+    },
+    ties:{
+      en:{title:'Deputy ties',desc:'Visibility of deputy–business edges.'},
+      ua:{title:'Звʼязки депутата',desc:'Видимість ребер депутат–бізнес.'},
+      ru:{title:'Связи депутата',desc:'Видимость рёбер депутат–бизнес.'},
+      stmts:[
+        {id:'t1',en:'Repeated private meetings with one holding should be visible.',ua:'Повторні зустрічі з одним холдингом мають бути видимі.',ru:'Повторные встречи с одним холдингом должны быть видны.',gac:0.73,kind:'bridge'},
+        {id:'t2',en:'Publishing ties is a witch hunt on business.',ua:'Публікація звʼязків — полювання на бізнес.',ru:'Публикация связей — охота на бизнес.',gac:0.18,kind:'divisive'},
+        {id:'t3',en:'Watch NGOs should disclose major donors too.',ua:'Наглядові NGO теж розкривають донорів.',ru:'Наблюдательные NGO тоже раскрывают доноров.',gac:0.76,kind:'bridge'}
+      ]
+    }
+  };
+  const BRIEF = {
+    bail:{
+      en:{title:'Bail for an official under investigation — payer unclear',p1:'Bail was posted; the public bank trail does not clearly show who paid.',p2:'Opaque money near public power raises process risk (hidden leverage), not a proof of guilt.',p3:'Polis cloud is dense: many wordings, not one yes/no poll.',p4:'Worth attention because equal procedure is hard to trust when payment paths vanish.'},
+      ua:{title:'Застава за чиновника під слідством — платник неясний',p1:'Заставу внесено; банківський слід не показує чітко платника.',p2:'Непрозорі гроші біля влади — ризик процесу, не доказ провини.',p3:'Хмара Polis щільна: багато формулювань, не один опит.',p4:'Увага потрібна, бо рівній процедурі важко довіряти, коли шлях оплати зникає.'},
+      ru:{title:'Залог за чиновника под следствием — плательщик неясен',p1:'Залог внесён; банковский след не показывает ясно плательщика.',p2:'Непрозрачные деньги рядом с властью — риск процесса, не доказательство вины.',p3:'Облако Polis плотное: много формулировок, не один опрос.',p4:'Внимание нужно, потому что равной процедуре трудно доверять, когда путь оплаты исчезает.'}
+    },
+    logs:{
+      en:{title:'Publishing official–business meetings',p1:'A Polis cloud formed around 72h logging.',p2:'Bridge statements share fair rules; divisive ones fear paralysis or capture.',p3:'Opinion map is wider than a 52/48 poll.',p4:'About inspectability of power meetings.'},
+      ua:{title:'Публікація зустрічей посадовець–бізнес',p1:'Хмара Polis навколо журналу 72г.',p2:'Мостові тези — чесні правила; раскольні — страх паралічу чи захоплення.',p3:'Карта думок ширша за 52/48.',p4:'Про можливість перевіряти зустрічі влади.'},
+      ru:{title:'Публикация встреч чиновник–бизнес',p1:'Облако Polis вокруг журнала 72ч.',p2:'Мостовые тезисы — честные правила; раскалывающие — страх паралича или захвата.',p3:'Карта мнений шире 52/48.',p4:'О проверяемости встреч власти.'}
+    },
+    lvt:{
+      en:{title:'LVT corridor debate',p1:'Many phrasings on land tax and home relief.',p2:'Extremes split; bridge statements may still align clusters.',p3:'Cloud brightness = volume of statements/votes.',p4:'Watch for rule capture — observation only.'},
+      ua:{title:'Дискусія коридору LVT',p1:'Багато формулювань про податок і пільгу на житло.',p2:'Крайнощі розколюють; мостові тези можуть єднати.',p3:'Яскравість хмари = обсяг тверджень/голосів.',p4:'Стежити за захопленням правила — лише observation.'},
+      ru:{title:'Дискуссия коридора LVT',p1:'Много формулировок о налоге и льготе на жильё.',p2:'Крайности раскалывают; мостовые тезисы могут объединять.',p3:'Яркость облака = объём утверждений/голосов.',p4:'Следить за захватом правила — только observation.'}
+    },
+    ties:{
+      en:{title:'Deputy–business edges',p1:'Reputation layer shows repeated ties; Polis adds competing frames.',p2:'Density ≠ conspiracy; it is public concern.',p3:'Use bridge vs divisive statements on the map.',p4:'Risk: informal power outside procedure.'},
+      ua:{title:'Ребра депутат–бізнес',p1:'Шар репутації — повторювані звʼязки; Polis — різні рамки.',p2:'Щільність ≠ змова; це занепокоєння.',p3:'Мостові vs раскольні тези на карті.',p4:'Ризик: неформальна влада поза процедурою.'},
+      ru:{title:'Рёбра депутат–бизнес',p1:'Слой репутации — повторяющиеся связи; Polis — разные рамки.',p2:'Плотность ≠ заговор; это беспокойство.',p3:'Мостовые vs раскалывающие тезисы на карте.',p4:'Риск: неформальная власть вне процедуры.'}
+    }
+  };
+
+  function lang(){ var L=localStorage.getItem('oss-lang')||'en'; if(L==='uk')L='ua'; return (L==='ua'||L==='ru')?L:'en'; }
+
+  const canvas=document.getElementById('space');
+  const ctx=canvas.getContext('2d');
+  let W=800,H=440;
+  let theme={ink:'#20302C'};
+  function refreshTheme(){ theme.ink=(getComputedStyle(document.documentElement).getPropertyValue('--ink')||'#20302C').trim(); }
+  refreshTheme();
+  function resize(){
+    const r=canvas.parentElement.getBoundingClientRect();
+    const w=Math.max(320,Math.floor(r.width));
+    if(w!==W||canvas.height!==H){ W=w; canvas.width=W; canvas.height=H; }
+  }
+  resize();
+
+  let yaw=0.5,pitch=0.28,dist=4.0,tNorm=1,selected=null,selectedTopic='bail';
+  let maxT=1; // append-only memory: once seen, stay in "memory horizon"
+  let dragging=false,lx=0,ly=0,playTimer=null,raf=0,dirty=true,fastDraw=false;
+  const myVotes={};
+  let stmtIndex=0;
+
+  function need(){ dirty=true; if(!raf) raf=requestAnimationFrame(()=>{raf=0;dirty=false;draw();}); }
+  function layerOn(L){
+    if(L==='inst') return document.getElementById('lay-inst').checked;
+    if(L==='rep') return document.getElementById('lay-rep').checked;
+    if(L==='polis') return document.getElementById('lay-polis').checked;
+    return true;
+  }
+  function allActors(){ return inst.concat(rep,polisCloud); }
+  // Append-only: visible if birth <= max(tNorm, and we use tNorm for "present")
+  // User complaint about erasure: always show if birth <= tNorm (standard).
+  // Also boost: never require upper bound. Nodes stay after birth.
+  function posAt(actor,t){
+    if(t < actor.birth) return null;
+    if(!layerOn(actor.layer)) return null;
+    const age=(t-actor.birth)/Math.max(0.001,1-actor.birth);
+    // gentle drift but stay in frame (clamp homes)
+    return [
+      actor.home[0]+0.15*Math.sin(age*2.2+actor.home[0]),
+      actor.home[1]+0.12*Math.cos(age*1.8+actor.home[1]),
+      actor.home[2]+0.10*Math.sin(age*1.3)
+    ];
+  }
+  function project(x,y,z){
+    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    let x1=x*cy-z*sy,z1=x*sy+z*cy,y1=y*cp-z1*sp; z1=y*sp+z1*cp+dist;
+    const f=360/Math.max(0.5,z1);
+    return {x:W/2+x1*f, y:H/2+y1*f*0.92, s:f, z:z1};
+  }
+  function activeNodes(t){
+    const out=[];
+    allActors().forEach(a=>{
+      const p=posAt(a,t); if(!p) return;
+      out.push({a,pr:project(p[0],p[1],p[2])});
+    });
+    out.sort((u,v)=>v.pr.z-u.pr.z);
+    return out;
+  }
+
+  function draw(){
+    resize();
+    ctx.clearRect(0,0,W,H);
+    // subtle vignette only — no grid that looks like "erasure bands"
+    const nodes=activeNodes(tNorm);
+    const byId={}; nodes.forEach(n=>byId[n.a.id]=n);
+
+    // Polis glows — lightweight only (solid soft circles, no gradients)
+    if(layerOn('polis')){
+      for(let i=0;i<nodes.length;i++){
+        const n=nodes[i]; if(n.a.layer!=='polis') continue;
+        const dens=n.a.dens||0.5;
+        const sel=n.a.topic===selectedTopic;
+        const R=(28+dens*44)*(sel?1.2:1);
+        ctx.beginPath();
+        ctx.fillStyle=n.a.color;
+        ctx.globalAlpha=(sel?0.38:0.2)*Math.min(1,0.5+dens*0.5);
+        ctx.arc(n.pr.x,n.pr.y,R*0.9,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
+
+    links.filter(L=>L.t<=tNorm && layerOn(L.layer)).forEach(L=>{
+      const A=byId[L.a],B=byId[L.b]; if(!A||!B) return;
+      ctx.strokeStyle=L.layer==='rep'?'rgba(183,134,44,0.6)':L.layer==='polis'?'rgba(47,111,208,0.45)':'rgba(63,114,104,0.55)';
+      ctx.lineWidth=L.layer==='polis'?1.2:1.5;
+      ctx.beginPath(); ctx.moveTo(A.pr.x,A.pr.y); ctx.lineTo(B.pr.x,B.pr.y); ctx.stroke();
+    });
+
+    ctx.font='11px Inter,sans-serif';
+    nodes.forEach(n=>{
+      const isPolis=n.a.layer==='polis';
+      const r=isPolis?7:Math.max(6,Math.min(14,n.pr.s*0.07));
+      const sel=selected===n.a.id || (isPolis && n.a.topic===selectedTopic);
+      ctx.beginPath();
+      ctx.fillStyle=n.a.color;
+      ctx.strokeStyle=sel?theme.ink:'rgba(255,255,255,0.35)';
+      ctx.lineWidth=sel?2.5:1;
+      ctx.arc(n.pr.x,n.pr.y,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=theme.ink;
+      ctx.fillText(n.a.label, n.pr.x+r+5, n.pr.y+4);
+    });
+
+    document.getElementById('tlabel').textContent='t = '+tNorm.toFixed(2)+' · nodes '+nodes.length;
+  }
+
+  function fillEvents(){
+    const list=document.getElementById('evlist'); list.innerHTML='';
+    let evs=events.filter(e=>e.t<=tNorm+0.001 && layerOn(e.layer));
+    if(selected) evs=evs.filter(e=>e.who===selected);
+    const frag=document.createDocumentFragment();
+    evs.slice().reverse().forEach(e=>{
+      const d=document.createElement('div'); d.className='ev';
+      d.innerHTML='<div class="t">t='+e.t.toFixed(2)+' · '+e.who+'</div>'+e.text;
+      d.onclick=()=>{
+        tNorm=Math.max(tNorm,e.t); // don't erase — jump forward at least
+        document.getElementById('time').value=Math.round(tNorm*100);
+        selected=e.who;
+        const c=polisCloud.find(p=>p.id===e.who); if(c) selectedTopic=c.topic;
+        fillEvents(); need();
+      };
+      frag.appendChild(d);
+    });
+    list.appendChild(frag);
+  }
+
+  function renderBrief(){
+    const body=document.getElementById('brief-body');
+    if(!body) return;
+    const L=lang();
+    const pack=BRIEF[selectedTopic]||BRIEF.bail;
+    const B=pack[L]||pack.en;
+    body.innerHTML='<p><strong>'+B.title+'</strong></p><p>'+B.p1+'</p><p>'+B.p2+'</p><p>'+B.p3+'</p><p>'+B.p4+'</p>';
+    const facts=document.getElementById('brief-facts');
+    if(facts){
+      const n=allActors().filter(a=>a.birth<=tNorm && layerOn(a.layer)).length;
+      facts.innerHTML='<li>topic='+selectedTopic+' · visible nodes='+n+' · t='+tNorm.toFixed(2)+'</li><li>Append-only to t: nodes do not vanish after they appear</li>';
+    }
+  }
+
+  function topicPack(){ return TOPICS[selectedTopic]||TOPICS.bail; }
+  function stmtText(s){ return s[lang()]||s.en; }
+
+  function avatarPos(){
+    const stmts=topicPack().stmts;
+    let x=50,y=55,n=0;
+    stmts.forEach(s=>{
+      const v=myVotes[s.id]; if(v==null||v===0) return;
+      n++;
+      x += v===1 ? (s.kind==='bridge'?38:70) : (s.kind==='bridge'?45:25);
+      y += v===1 ? 40 : 65;
+    });
+    if(!n) return {x:50,y:58};
+    return {x:x/n,y:y/n};
+  }
+
+  function renderOpinionMap(){
+    const omap=document.getElementById('omap');
+    if(!omap) return;
+    const T=topicPack();
+    const meta=T[lang()]||T.en;
+    // Topic-specific layout seeds so each Polis cloud looks different
+    const layouts = {
+      bail: {bg:'#0b0f14', hulls:[
+        {x:8,y:18,w:40,h:52,c:'#5B8DEF',lab:'A',n:612,lx:18,ly:24},
+        {x:52,y:10,w:36,h:38,c:'#E07070',lab:'B',n:388,lx:68,ly:16},
+        {x:45,y:48,w:42,h:44,c:'#E8A45A',lab:'C',n:271,lx:58,ly:74},
+        {x:12,y:58,w:30,h:30,c:'#9B8CF5',lab:'D',n:154,lx:22,ly:80}
+      ], scatter:0.9},
+      logs: {bg:'#0c1210', hulls:[
+        {x:20,y:12,w:55,h:40,c:'#3FC091',lab:'A',n:440,lx:40,ly:18},
+        {x:10,y:50,w:35,h:40,c:'#4E8FF7',lab:'B',n:310,lx:22,ly:70},
+        {x:55,y:45,w:38,h:45,c:'#D4A84B',lab:'C',n:220,lx:70,ly:72}
+      ], scatter:1.1},
+      lvt: {bg:'#12100b', hulls:[
+        {x:5,y:25,w:45,h:50,c:'#B8860B',lab:'A',n:520,lx:20,ly:35},
+        {x:50,y:20,w:45,h:55,c:'#3F7268',lab:'B',n:480,lx:72,ly:40}
+      ], scatter:1.3},
+      ties: {bg:'#100c14', hulls:[
+        {x:15,y:15,w:32,h:35,c:'#DA6FCB',lab:'A',n:290,lx:25,ly:22},
+        {x:50,y:12,w:35,h:42,c:'#4E8FF7',lab:'B',n:340,lx:65,ly:20},
+        {x:25,y:50,w:50,h:40,c:'#E7B23D',lab:'C',n:410,lx:48,ly:72},
+        {x:70,y:55,w:25,h:30,c:'#E0637A',lab:'D',n:180,lx:78,ly:78}
+      ], scatter:1.0}
+    };
+    const lay=layouts[selectedTopic]||layouts.bail;
+    omap.style.background=lay.bg;
+    omap.innerHTML='';
+    lay.hulls.forEach(h=>{
+      const el=document.createElement('div'); el.className='hull';
+      el.style.cssText='left:'+h.x+'%;top:'+h.y+'%;width:'+h.w+'%;height:'+h.h+'%;background:'+h.c+';opacity:.28;border-radius:42%';
+      omap.appendChild(el);
+      const lab=document.createElement('div'); lab.className='grp-label';
+      lab.style.left=h.lx+'%'; lab.style.top=h.ly+'%';
+      lab.textContent=h.lab+' · '+h.n;
+      omap.appendChild(lab);
+    });
+    // more dots, topic-seeded positions
+    const seed=selectedTopic.charCodeAt(0)+selectedTopic.length*17;
+    const nDots=70+lay.hulls.length*12;
+    for(let i=0;i<nDots;i++){
+      const d=document.createElement('div'); d.className='person';
+      const h=lay.hulls[i%lay.hulls.length];
+      const ang=(i*2.4+seed)*0.7;
+      const rad=8+((i*13+seed)%20)*lay.scatter*0.35;
+      d.style.left=(h.x+h.w/2+Math.cos(ang)*rad)+'%';
+      d.style.top=(h.y+h.h/2+Math.sin(ang)*rad*0.9)+'%';
+      d.style.background=h.c;
+      omap.appendChild(d);
+    }
+    // faces near hull centers
+    lay.hulls.forEach((h,i)=>{
+      const f=document.createElement('div'); f.className='person face';
+      f.style.left=(h.x+h.w*0.45)+'%'; f.style.top=(h.y+h.h*0.45)+'%';
+      f.textContent='👤';
+      omap.appendChild(f);
+    });
+    const me=document.createElement('div'); me.className='me'; me.title='You';
+    const ap=avatarPos();
+    // bias avatar toward topic default before votes
+    const bias={bail:{x:40,y:50},logs:{x:55,y:40},lvt:{x:35,y:45},ties:{x:50,y:55}};
+    const b0=bias[selectedTopic]||{x:50,y:50};
+    const voted=Object.keys(myVotes).some(k=>T.stmts.some(s=>s.id===k));
+    me.style.left=(voted?Math.max(6,Math.min(94,ap.x)):b0.x)+'%';
+    me.style.top=(voted?Math.max(8,Math.min(92,ap.y)):b0.y)+'%';
+    omap.appendChild(me);
+
+    // beeswarm larger
+    const bee=document.getElementById('beeswarm');
+    if(bee){
+      bee.innerHTML='';
+      // synthetic extra bees for volume
+      const extra=12+(seed%8);
+      for(let i=0;i<extra;i++){
+        const gac=0.15+((i*37+seed)%80)/100;
+        const x=6+(1-gac)*88;
+        const b=document.createElement('div'); b.className='bee';
+        b.style.left=x+'%';
+        b.style.bottom=(10+(i%5)*14)+'px';
+        b.style.background=gac>=0.55?'#2F6F4E':'#A63A3A';
+        b.style.opacity='0.35';
+        bee.appendChild(b);
+      }
+      T.stmts.forEach((s,i)=>{
+        const x=6+(1-s.gac)*88;
+        const b=document.createElement('div'); b.className='bee';
+        b.style.left=x+'%';
+        b.style.bottom=(14+(i%4)*16)+'px';
+        b.style.background=s.kind==='bridge'?'#2F6F4E':'#A63A3A';
+        b.style.width='12px'; b.style.height='12px';
+        b.title=stmtText(s)+' GAC='+s.gac;
+        bee.appendChild(b);
+      });
+    }
+    const gacRow=document.getElementById('gac-row');
+    if(gacRow){
+      gacRow.innerHTML='';
+      T.stmts.forEach(s=>{
+        const c=document.createElement('span');
+        c.className='gac-chip '+(s.gac>=0.6?'hi':'lo');
+        c.textContent=(s.kind==='bridge'?'✓ ':'✗ ')+s.gac.toFixed(2)+' · '+(stmtText(s).slice(0,28))+(stmtText(s).length>28?'…':'');
+        gacRow.appendChild(c);
+      });
+    }
+
+    const stmts=T.stmts;
+    if(stmtIndex>=stmts.length) stmtIndex=0;
+    const cur=stmts[stmtIndex];
+    document.getElementById('vote-q').textContent=stmtText(cur);
+    const actions=document.getElementById('vote-actions');
+    actions.innerHTML='';
+    const L=lang();
+    const labs={en:['Agree','Disagree','Pass / Unsure'],ua:['Згоден','Не згоден','Пропуск'],ru:['Согласен','Не согласен','Пропуск']};
+    const lab=labs[L]||labs.en;
+    [[1,'yes',lab[0]],[-1,'no',lab[1]],[0,'skip',lab[2]]].forEach(tuple=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.className=tuple[1]==='yes'?'yes':(tuple[1]==='no'?'no':'');
+      if(myVotes[cur.id]===tuple[0]) b.classList.add(tuple[1]==='yes'?'on-yes':(tuple[1]==='no'?'on-no':'on-skip'));
+      b.textContent=tuple[2];
+      b.onclick=()=>{ myVotes[cur.id]=tuple[0]; stmtIndex=(stmtIndex+1)%stmts.length; renderOpinionMap(); };
+      actions.appendChild(b);
+    });
+    const done=Object.keys(myVotes).filter(k=>stmts.some(s=>s.id===k)).length;
+    document.getElementById('vote-progress').textContent=(L==='en'?'Topic: ':'Тема: ')+meta.title+' · '+(L==='en'?'voted ':'оцінено ')+done+'/'+stmts.length;
+
+    const bars=document.getElementById('stmt-bars');
+    if(bars){
+      const agree=Math.round(38+cur.gac*50);
+      const groups=['Overall','A','B','C'].slice(0, Math.min(4, lay.hulls.length+1));
+      bars.innerHTML='<div style="font-size:12px;color:var(--soft);margin-bottom:.4rem;font-weight:500">'+(L==='en'?'Group split on this statement':'Розклад по групах')+'</div>'+
+        groups.map(function(name,i){
+          const a=Math.max(8,agree-(i===2?22:0)+(i===1?6:0)-(i===3?10:0));
+          const d=Math.max(8,92-a-10);
+          return '<div style="font-size:12px;margin:.3rem 0">'+name+'</div><div class="bar-mini" style="height:10px"><i style="width:'+a+'%;background:#2F6F4E"></i><i style="width:'+d+'%;background:#A63A3A"></i><i style="width:10%;background:#888"></i></div>';
+        }).join('');
+    }
+  }
+
+canvas.addEventListener('pointerdown',e=>{dragging=true;lx=e.clientX;ly=e.clientY;canvas.classList.add('drag');canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointerup',()=>{dragging=false;canvas.classList.remove('drag');need();});
+  canvas.addEventListener('pointermove',e=>{
+    if(!dragging) return;
+    yaw+=(e.clientX-lx)*0.008; pitch=Math.max(-1.1,Math.min(1.1,pitch+(e.clientY-ly)*0.006));
+    lx=e.clientX; ly=e.clientY; need();
+  });
+  canvas.addEventListener('wheel',e=>{e.preventDefault(); dist=Math.max(2.6,Math.min(7.5,dist+e.deltaY*0.005)); need();},{passive:false});
+  canvas.addEventListener('click',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*(W/rect.width), y=(e.clientY-rect.top)*(H/rect.height);
+    let hit=null,best=1e9,hitTopic=null;
+    activeNodes(tNorm).forEach(n=>{
+      const dx=n.pr.x-x,dy=n.pr.y-y,r=Math.max(14,n.pr.s*0.12),d=dx*dx+dy*dy;
+      if(d<r*r&&d<best){best=d;hit=n.a.id; if(n.a.topic) hitTopic=n.a.topic;}
+    });
+    selected=hit;
+    if(hitTopic){ selectedTopic=hitTopic; stmtIndex=0; }
+    document.getElementById('sel-label').textContent=hit?(' · '+hit):'';
+    fillEvents(); renderBrief(); renderOpinionMap(); need();
+  });
+
+  document.getElementById('time').addEventListener('input',function(){
+    tNorm=this.value/100;
+    maxT=Math.max(maxT,tNorm);
+    fillEvents(); renderBrief(); need();
+  });
+  document.getElementById('btn-play').onclick=function(){
+    const L=lang();
+    if(playTimer){clearInterval(playTimer);playTimer=null;this.textContent=L==='en'?'Play':'Пуск';return;}
+    this.textContent=L==='en'?'Pause':'Пауза';
+    playTimer=setInterval(()=>{
+      const sl=document.getElementById('time');
+      let v=+sl.value; if(v>=100){v=0;} v+=1; sl.value=v; tNorm=v/100; maxT=Math.max(maxT,tNorm); if(v%5===0) fillEvents(); need();
+    },100);
+  };
+  ['lay-inst','lay-rep','lay-polis'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',()=>{fillEvents();renderBrief();need();});
+  });
+  window.addEventListener('resize',need);
+  new MutationObserver(function(){ refreshTheme(); need(); }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  // Start at full timeline so nothing looks "wiped"
+  tNorm=1; document.getElementById('time').value=100;
+  selectedTopic='bail';
+  fillEvents(); renderBrief(); renderOpinionMap(); need();
+})();
+</script>
+</body>
+</html>

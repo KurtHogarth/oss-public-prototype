@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social rating — companies & public figures — OSS Public Prototype</title>
+<meta name="description" content="Social rating for public figures and companies: trust/competence/ethics from dated observable actions. Separate state and corporate tracks. Demo only.">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.note{font-size:12px;color:var(--faint);border-left:3px solid var(--seal);padding:.5rem .8rem;background:var(--seal-w);border-radius:0 8px 8px 0;margin-bottom:1.1rem;max-width:74ch}
+.tracktabs{display:flex;gap:.5rem;margin-bottom:1.1rem}
+.tracktabs button{font-family:var(--sans);font-size:13px;font-weight:600;padding:.5rem 1rem;border-radius:9px;border:1.5px solid var(--strong);background:transparent;color:var(--soft);cursor:pointer}
+.tracktabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+[data-theme="dark"] .tracktabs button.on{color:#121816}
+.methodrow{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.2rem}
+.methodchip{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:20px;padding:.3rem .7rem;color:var(--soft);background:var(--raised)}
+.filters{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.filters button{font-size:12px;padding:.35rem .7rem;border-radius:8px;border:1px solid var(--strong);background:transparent;color:var(--soft);cursor:pointer}
+.filters button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+[data-theme="dark"] .filters button.on{color:#121816}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;cursor:pointer}
+.card h3{font-family:var(--serif);font-size:16px;margin:0}
+.role{font-family:var(--mono);font-size:11px;color:var(--teal-d)}
+.band{font-family:var(--mono);font-size:11px;padding:.2rem .55rem;border-radius:5px;font-weight:600;white-space:nowrap}
+.band.full{background:var(--yes-w);color:var(--yes)}
+.band.reduced{background:var(--seal-w);color:var(--seal-d)}
+.band.suspended{background:var(--no-w);color:var(--no)}
+.band.recall{background:var(--no);color:#fff}
+.axes{margin-top:.7rem}
+.axis-row{display:grid;grid-template-columns:140px 1fr 34px;gap:.5rem;align-items:center;font-size:12px;color:var(--soft);margin:.32rem 0}
+.axis-track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.axis-fill{height:100%;border-radius:4px;background:var(--teal)}
+.asof{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:.5rem}
+.log{display:none;margin-top:.8rem;padding-top:.7rem;border-top:1px dashed var(--strong)}
+.log.open{display:block}
+.log h4{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);margin:0 0 .5rem}
+.logentry{font-size:12px;color:var(--soft);padding:.4rem 0;border-bottom:1px solid var(--line)}
+.logentry:last-child{border-bottom:none}
+.logentry .d{font-family:var(--mono);font-size:10.5px;color:var(--teal-d);margin-right:.4rem}
+.logentry .delta{font-family:var(--mono);font-weight:600}
+.logentry .delta.up{color:var(--yes)}
+.logentry .delta.down{color:var(--no)}
+.cardfoot{display:flex;gap:.9rem;margin-top:.7rem;font-size:11.5px}
+.cardfoot a{color:var(--teal-d);text-decoration:none;font-weight:600}
+.corp-banner{background:var(--no-w);border:1px solid var(--no);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1.1rem;font-size:12.5px;color:var(--soft)}
+.corp-banner b{color:var(--no)}
+.culture-flag{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;background:var(--seal-w);color:var(--seal-d);border-radius:4px;padding:.1rem .4rem;margin-left:.4rem}
+.wrap{max-width:1040px;margin:0 auto;padding:1rem 1.25rem 3rem}
+@media(max-width:480px){.axis-row{grid-template-columns:100px 1fr 30px;gap:.35rem;font-size:11px}.card-h{flex-direction:column;align-items:flex-start;gap:.3rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow" data-i18n-en="Accountability · Art. 5.0–5.2 · observable dated actions only" data-i18n-ua="Підзвітність · Ст. 5.0–5.2 · лише спостережувані датовані дії" data-i18n-ru="Подотчётность · Ст. 5.0–5.2 · только наблюдаемые датированные действия">Accountability · Art. 5.0–5.2 · observable dated actions only</p>
+  <h1 data-i18n-en="Social rating — public figures & companies" data-i18n-ua="Соціальний рейтинг — публічні особи та компанії" data-i18n-ru="Социальный рейтинг — публичные фигуры и компании">Social rating — public figures & companies</h1>
+  <p class="lead" data-i18n-en="Helps people see a dated track record of anyone holding delegated OSS power — house to state — and decide, at election or recall, who stays competent for the role. Not a prediction of character; only a record of what happened, when, and its consequence." data-i18n-ua="Допомагає бачити датовану історію дій будь-кого з делегованою владою ОСС — від дому до держави — і вирішувати на виборах чи відкликанні, хто лишається компетентним. Не прогноз характеру — лише запис того, що сталося, коли і з яким наслідком." data-i18n-ru="Помогает видеть датированную историю действий любого держателя делегированной власти ОСО — от дома до государства — и решать на выборах или отзыве, кто остаётся компетентен для роли. Не прогноз характера — только запись того, что произошло, когда и с каким следствием.">Helps people see a dated track record of anyone holding delegated OSS power — house to state — and decide, at election or recall, who stays competent for the role. Not a prediction of character; only a record of what happened, when, and its consequence.</p>
+  <div class="plural" data-i18n-en="Three axes and the 3.0/2.5/2.0 thresholds below are this fork's calibration of Art. 5.1 — another fork may weigh or threshold accountability differently and stay Core-compatible." data-i18n-ua="Три осі та пороги 3.0/2.5/2.0 нижче — калібрування Ст. 5.1 цього форка; інший форк може зважувати підзвітність інакше і лишатись сумісним з Ядром." data-i18n-ru="Три оси и пороги 3.0/2.5/2.0 ниже — калибровка Ст. 5.1 этого форка; другой форк может взвешивать подотчётность иначе и остаться совместимым с Ядром.">Three axes and the 3.0/2.5/2.0 thresholds below are this fork's calibration of Art. 5.1 — another fork may weigh or threshold accountability differently and stay Core-compatible.</div>
+  <div class="note" data-i18n-en="Demo · synthetic sample entries, no real people. Principle 5.0: score is derived only from logged, dated actions — never from a personality profile or predicted intent. A score never auto-sanctions; recall requires the court module (5.3) + human confirmation." data-i18n-ua="Демо · синтетичні приклади, не реальні люди. Принцип 5.0: оцінка рахується лише з датованих дій — ніколи з профілю особистості. Оцінка ніколи не санкціонує автоматично; відкликання — через судовий модуль (5.3) + людину." data-i18n-ru="Демо · синтетические примеры, не реальные люди. Принцип 5.0: оценка считается только по датированным действиям — никогда по профилю личности. Оценка никогда не санкционирует автоматически; отзыв — через судебный модуль (5.3) + человека.">Demo · synthetic sample entries, no real people. Principle 5.0: score is derived only from logged, dated actions — never from a personality profile or predicted intent. A score never auto-sanctions; recall requires the court module (5.3) + human confirmation.</div>
+
+  <div class="tracktabs" id="tracktabs">
+    <button type="button" class="on" data-track="state" data-i18n-en="State &amp; civic roles (5.1)" data-i18n-ua="Державні й громадські ролі (5.1)" data-i18n-ru="Государственные и гражданские роли (5.1)">State &amp; civic roles (5.1)</button>
+    <button type="button" data-track="corp" data-i18n-en="Corporate track (5.2)" data-i18n-ua="Корпоративний трек (5.2)" data-i18n-ru="Корпоративный трек (5.2)">Corporate track (5.2)</button>
+  </div>
+
+  <div id="state-panel">
+    <div class="methodrow">
+      <span class="methodchip" data-i18n-en="Anti-flash-crash: single-action cap (illustrative: ±0.3)" data-i18n-ua="Антиобвал: межа на одну дію (приклад: ±0.3)" data-i18n-ru="Антиобвал: предел на одно действие (пример: ±0.3)">Anti-flash-crash: single-action cap (illustrative: ±0.3)</span>
+      <span class="methodchip" data-i18n-en="Appeal: jury lottery (Art. 5.3, Cat. 2)" data-i18n-ua="Апеляція: жереб (Ст. 5.3, Кат. 2)" data-i18n-ru="Апелляция: жребий (Ст. 5.3, Кат. 2)">Appeal: jury lottery (Art. 5.3, Cat. 2)</span>
+      <span class="methodchip" data-i18n-en="Coverage: any role with delegated power over people/resources" data-i18n-ua="Охоплення: будь-яка роль із владою над людьми/ресурсами" data-i18n-ru="Охват: любая роль с властью над людьми/ресурсами">Coverage: any role with delegated power over people/resources</span>
+    </div>
+    <div class="filters" id="filters">
+      <button type="button" class="on" data-lvl="all" data-i18n-en="All levels" data-i18n-ua="Усі рівні" data-i18n-ru="Все уровни">All levels</button>
+      <button type="button" data-lvl="house" data-i18n-en="House" data-i18n-ua="Дім" data-i18n-ru="Дом">House</button>
+      <button type="button" data-lvl="street" data-i18n-en="Street" data-i18n-ua="Вулиця" data-i18n-ru="Улица">Street</button>
+      <button type="button" data-lvl="district" data-i18n-en="District" data-i18n-ua="Район" data-i18n-ru="Район">District</button>
+      <button type="button" data-lvl="city" data-i18n-en="City" data-i18n-ua="Місто" data-i18n-ru="Город">City</button>
+      <button type="button" data-lvl="region" data-i18n-en="Region" data-i18n-ua="Регіон" data-i18n-ru="Регион">Region</button>
+      <button type="button" data-lvl="state" data-i18n-en="State" data-i18n-ua="Держава" data-i18n-ru="Государство">State</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div id="corp-panel" style="display:none">
+    <div class="corp-banner">
+      <b data-i18n-en="Separate by design (Art. 5.2):" data-i18n-ua="Окремо за задумом (Ст. 5.2):" data-i18n-ru="Отдельно по замыслу (Ст. 5.2):">Separate by design (Art. 5.2):</b>
+      <span data-i18n-en=" same technical base as the state track, but consequences are market-only (reputation, talent/customer attrition) — never removal from office. Merging the two tracks would give OSS quasi-state power over private business." data-i18n-ua=" та сама технічна база, що й у державного треку, але наслідки лише ринкові (репутація, відтік кадрів/клієнтів) — ніколи не усунення з посади. Змішання дало б ОСС квазідержавну владу над приватним бізнесом." data-i18n-ru=" та же техническая база, что и у государственного трека, но последствия только рыночные (репутация, отток кадров/клиентов) — никогда не отстранение от должности. Смешение дало бы ОСО квазигосударственную власть над частным бизнесом."> same technical base as the state track, but consequences are market-only (reputation, talent/customer attrition) — never removal from office. Merging the two tracks would give OSS quasi-state power over private business.</span>
+    </div>
+    <div class="methodrow">
+      <span class="methodchip" data-i18n-en="Employment verified via zkTLS — payslip/tax session proof, employer consent not required" data-i18n-ua="Верифікація трудовлаштування через zkTLS — без згоди роботодавця" data-i18n-ru="Верификация трудоустройства через zkTLS — без согласия работодателя">Employment verified via zkTLS — payslip/tax session proof, employer consent not required</span>
+      <span class="methodchip" data-i18n-en="Disputed facts → arbitration module (5.3), not single-claim auto-record" data-i18n-ua="Спірні факти → арбітраж (5.3), не авто-запис з однієї заяви" data-i18n-ru="Спорные факты → арбитраж (5.3), не авто-запись с одного заявления">Disputed facts → arbitration module (5.3), not single-claim auto-record</span>
+    </div>
+    <div id="corp-list"></div>
+  </div>
+
+  <footer data-i18n-en="Prototype · action-log based, not live-ticking · score ≠ policy · Art. 5.0/5.1/5.2" data-i18n-ua="Прототип · на базі логу дій, без live-оновлення · оцінка ≠ політика · Ст. 5.0/5.1/5.2" data-i18n-ru="Прототип · на базе лога действий, без live-обновления · оценка ≠ политика · Ст. 5.0/5.1/5.2">Prototype · action-log based, not live-ticking · score ≠ policy · Art. 5.0/5.1/5.2</footer>
+</div>
+<script src="assets/site.js" defer></script>
+<script>
+(function(){
+  // State & civic track — three axes per §5.1: Trust, Competence, Ethics/Procedure. Scale 0–5, thresholds 3.0/2.5/2.0.
+  const people = [
+    {id:'h1', name:'Household rep — Ivanenko St. 12', level:'house', role:'House coordinator',
+      trust:4.1, comp:3.8, eth:4.3,
+      log:[
+        {d:'2026-06-02', axis:'trust', delta:+0.1, text:'Published shared-expense ledger on time, 4th consecutive quarter'},
+        {d:'2026-02-14', axis:'eth', delta:+0.2, text:'Disclosed personal conflict of interest before vote on repair contractor'}
+      ]},
+    {id:'s1', name:'Street coordinator — Lypova', level:'street', role:'Street coordinator',
+      trust:2.7, comp:3.1, eth:2.4,
+      log:[
+        {d:'2026-05-20', axis:'trust', delta:-0.3, text:'Missed Tier-1 mandatory response deadline by 22 days (Art. 7.4.2)'},
+        {d:'2026-03-01', axis:'eth', delta:-0.2, text:'Independent audit flagged undisclosed vendor relationship'}
+      ]},
+    {id:'d1', name:'District council member — H. Kovalenko', level:'district', role:'District council',
+      trust:3.9, comp:3.6, eth:4.0,
+      log:[
+        {d:'2026-07-11', axis:'comp', delta:+0.2, text:'Budget proposal passed independent cost-model review without revision'},
+        {d:'2026-04-03', axis:'trust', delta:+0.1, text:'Voluntary disclosure of a Tier-1 dissent gap ahead of trigger'}
+      ]},
+    {id:'d2', name:'District council member — O. Marchenko', level:'district', role:'District council',
+      trust:2.2, comp:2.6, eth:1.9,
+      log:[
+        {d:'2026-08-01', axis:'eth', delta:-0.3, text:'Court (Cat.2) found undisclosed related-party contract award'},
+        {d:'2026-05-15', axis:'trust', delta:-0.3, text:'Repeated Tier-1 non-response — third occurrence, recall track opened (Art. 7.4.2 Tier 3)'}
+      ]},
+    {id:'c1', name:'City assembly — I. Voloshyn', level:'city', role:'City assembly',
+      trust:4.2, comp:3.9, eth:4.1,
+      log:[
+        {d:'2026-06-28', axis:'comp', delta:+0.1, text:'Procurement price matched market benchmark within 2% (ProZorro-style audit)'}
+      ]},
+    {id:'c2', name:'Mayor office (demo) — T. Bondar', level:'city', role:'Mayor office',
+      trust:1.8, comp:2.4, eth:1.7,
+      log:[
+        {d:'2026-07-30', axis:'trust', delta:-0.3, text:'"No objection" consent decision diverged sharply from Polis sentiment on same question (Art. 7.4.5 hypocrisy check)'},
+        {d:'2026-04-18', axis:'eth', delta:-0.3, text:'Level-2 jury found process violation in Cat.3 case; case reopened'}
+      ]},
+    {id:'r1', name:'Regional board — N. Savchenko', level:'region', role:'Regional board',
+      trust:3.3, comp:3.4, eth:3.2,
+      log:[
+        {d:'2026-05-09', axis:'comp', delta:+0.1, text:'Regional LVT reassessment published with full CAMA methodology'}
+      ]},
+    {id:'g1', name:'Deputy D (demo)', level:'state', role:'Parliament',
+      trust:1.6, comp:2.1, eth:1.5,
+      log:[
+        {d:'2026-08-10', axis:'trust', delta:-0.3, text:'Coordinated-attack detector found organized voting pattern originating from this office (Art. 7.4.4 — symmetric penalty applied)'},
+        {d:'2026-06-05', axis:'eth', delta:-0.3, text:'Connections dossier (7.4.3) flagged unresolved beneficiary link; graph structure only, no third-party raw data'}
+      ]},
+    {id:'g2', name:'Minister demo', level:'state', role:'Cabinet portfolio',
+      trust:3.5, comp:3.7, eth:3.4,
+      log:[
+        {d:'2026-07-02', axis:'trust', delta:+0.1, text:'Influence-transparency disclosure filed above required threshold ahead of schedule (Art. 7.4.6)'}
+      ]}
+  ];
+
+  function overall(p){ return (p.trust+p.comp+p.eth)/3; }
+  function band(o){
+    if (o>=3.0) return 'full';
+    if (o>=2.5) return 'reduced';
+    if (o>=2.0) return 'suspended';
+    return 'recall';
+  }
+  const BANDLABEL = {
+    en:{full:'Full authority',reduced:'Reduced authority',suspended:'Temporary suspension',recall:'Recall eligible'},
+    ua:{full:'Повні повноваження',reduced:'Знижені повноваження',suspended:'Тимчасове відсторонення',recall:'Відкликання можливе'},
+    ru:{full:'Полные полномочия',reduced:'Сниженные полномочия',suspended:'Временное отстранение',recall:'Отзыв возможен'}
+  };
+  const AXISLABEL = {
+    en:{trust:'Trust',comp:'Competence',eth:'Ethics / procedure'},
+    ua:{trust:'Довіра',comp:'Компетентність',eth:'Етика / процедура'},
+    ru:{trust:'Доверие',comp:'Компетентность',eth:'Этика / процедура'}
+  };
+  function lang(){ const L=(localStorage.getItem('oss-lang')||'en'); return L==='uk'?'ua':L; }
+
+  function axisRow(label, val){
+    const pct = Math.round((val/5)*100);
+    return '<div class="axis-row"><span>'+label+'</span><div class="axis-track"><div class="axis-fill" style="width:'+pct+'%"></div></div><span class="tnum">'+val.toFixed(1)+'</span></div>';
+  }
+
+  let filter='all';
+  let openId=null;
+  const MISC = {
+    en:{asof:'as of ', loggedActions:' logged actions · click to view', logHeader:'Dated action log', appeal:'Appeal (jury lottery) →', recall:'Recall procedure →'},
+    ua:{asof:'станом на ', loggedActions:' датованих дій · клік для перегляду', logHeader:'Лог датованих дій', appeal:'Апеляція (жереб) →', recall:'Процедура відкликання →'},
+    ru:{asof:'по состоянию на ', loggedActions:' датированных действий · клик для просмотра', logHeader:'Лог датированных действий', appeal:'Апелляция (жребий) →', recall:'Процедура отзыва →'}
+  };
+  function render(){
+    const L=lang(), BL=BANDLABEL[L]||BANDLABEL.en, AL=AXISLABEL[L]||AXISLABEL.en, M=MISC[L]||MISC.en;
+    const box=document.getElementById('list');
+    box.innerHTML='';
+    people.filter(p=>filter==='all'||p.level===filter).forEach(p=>{
+      const o=overall(p), b=band(o);
+      const lastDate = p.log.reduce((m,e)=>e.d>m?e.d:m, p.log[0].d);
+      const card=document.createElement('div');
+      card.className='card';
+      card.innerHTML =
+        '<div class="card-h" data-open="'+p.id+'"><div><h3>'+p.name+'</h3><div class="role">'+p.role+' · '+p.level+'</div></div>'+
+        '<div class="band '+b+'">'+BL[b]+' · <span class="tnum">'+o.toFixed(1)+'</span></div></div>'+
+        '<div class="axes">'+axisRow(AL.trust,p.trust)+axisRow(AL.comp,p.comp)+axisRow(AL.eth,p.eth)+'</div>'+
+        '<div class="asof">'+M.asof+lastDate+' · '+p.log.length+M.loggedActions+'</div>'+
+        '<div class="log" id="log-'+p.id+'"><h4>'+M.logHeader+'</h4>'+
+          p.log.map(e=>'<div class="logentry"><span class="d">'+e.d+'</span>'+e.text+' <span class="delta '+(e.delta>0?'up':'down')+'">'+(e.delta>0?'+':'')+e.delta.toFixed(1)+' '+AL[e.axis]+'</span></div>').join('')+
+        '</div>'+
+        '<div class="cardfoot"><a href="OSS_Court_MVP_v8.html">'+M.appeal+'</a>'+
+        (b==='recall'?('<a href="accountability.html">'+M.recall+'</a>'):'')+'</div>';
+      const header = card.querySelector('.card-h');
+      header.addEventListener('click', ()=>{
+        openId = openId===p.id ? null : p.id;
+        render();
+      });
+      if (openId===p.id) card.querySelector('#log-'+p.id).classList.add('open');
+      box.appendChild(card);
+    });
+  }
+  document.querySelectorAll('#filters button').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('#filters button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      filter=b.getAttribute('data-lvl');
+      render();
+    };
+  });
+
+  // Corporate track — §5.2: separate technical base, 4 axes, market consequences only.
+  const companies = [
+    {id:'co1', name:'Sample Co-op Manufacturing (demo)', comp:71, safety:64, contract:78, culture:58,
+      note_en:'Compensation axis rose after wage adjustment; Safety and Culture unaffected by the same event.',
+      note_ua:'Вісь Compensation зросла після перегляду оплати; Safety і Culture тією ж подією не зачеплені.',
+      note_ru:'Ось Compensation выросла после пересмотра оплаты; Safety и Culture тем же событием не затронуты.'},
+    {id:'co2', name:'Sample Logistics Ltd (demo)', comp:44, safety:39, contract:52, culture:41,
+      note_en:'Contract Compliance axis moved after arbitration module ruling (5.3) — not from a single unverified claim.',
+      note_ua:'Вісь Contract Compliance змінилася за рішенням арбітражного модуля (5.3) — не за однією неперевіреною скаргою.',
+      note_ru:'Ось Contract Compliance изменилась по решению арбитражного модуля (5.3) — не по одной непроверенной жалобе.'}
+  ];
+  function corpBar(label, val){
+    return '<div class="axis-row"><span>'+label+'</span><div class="axis-track"><div class="axis-fill" style="width:'+val+'%"></div></div><span class="tnum">'+val+'</span></div>';
+  }
+  function renderCorp(){
+    const L=lang();
+    const box=document.getElementById('corp-list');
+    box.innerHTML = companies.map(c=>{
+      const labels = L==='ru'
+        ? {comp:'Компенсация',safety:'Безопасность',contract:'Соблюдение контракта',culture:'Культура'}
+        : L==='ua'
+        ? {comp:'Компенсація',safety:'Безпека',contract:'Дотримання контракту',culture:'Культура'}
+        : {comp:'Compensation',safety:'Safety',contract:'Contract Compliance',culture:'Culture'};
+      const note = L==='ru' ? c.note_ru : L==='ua' ? c.note_ua : c.note_en;
+      return '<div class="card"><h3>'+c.name+'</h3>'+
+        '<div class="axes">'+corpBar(labels.comp,c.comp)+corpBar(labels.safety,c.safety)+corpBar(labels.contract,c.contract)+
+        corpBar(labels.culture,c.culture)+'</div>'+
+        '<div class="asof">'+note+'<span class="culture-flag">'+(L==='ru'?'Culture: немодерируемо':L==='ua'?'Culture: немодероване':'Culture: unmoderated')+'</span></div></div>';
+    }).join('');
+  }
+
+  document.querySelectorAll('#tracktabs button').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('#tracktabs button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      const t=b.getAttribute('data-track');
+      document.getElementById('state-panel').style.display = t==='state' ? '' : 'none';
+      document.getElementById('corp-panel').style.display = t==='corp' ? '' : 'none';
+    };
+  });
+
+  render();
+  renderCorp();
+})();
+</script>
+</body>
+</html>

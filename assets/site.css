@@ -1,0 +1,114 @@
+/* Shared site chrome — fixed header, theme, languages */
+:root{
+  --paper:#F6F4EE;--raised:#FFF;--ink:#20302C;--soft:#4C5B57;--faint:#676F6B;
+  --line:#D9D4C6;--strong:#B9B2A0;--teal:#3F7268;--teal-d:#28453F;--teal-w:#E4EEEB;
+  --seal:#B7862C;--seal-w:#F7EBD4;--seal-d:#896421;--yes:#3B7A3B;--yes-w:#E7F1E5;--no:#A63A3A;--no-w:#F6E4E2;
+  --serif:'Source Serif 4',Georgia,serif;--mono:'IBM Plex Mono',monospace;--sans:Inter,-apple-system,sans-serif;
+  --header-h:72px;
+}
+[data-theme="dark"]{
+  --paper:#121816;--raised:#1A221F;--ink:#E8EDE9;--soft:#A8B5AF;--faint:#80928B;
+  --line:#2A3530;--strong:#3D4A44;--teal:#5BA89A;--teal-d:#7BC4B5;--teal-w:#1A2E2A;
+  --seal:#D4A84B;--seal-w:#3A3218;--seal-d:#D4A84B;--yes:#6BC47A;--yes-w:#1A2E1F;--no:#E07A7A;--no-w:#3A1F1F;
+  --paper-raised:#1A221F;
+}
+
+/* Global polish — applies once, site-wide, instead of being redone per page */
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+.tnum{font-variant-numeric:tabular-nums}
+button,[role="button"],a,.tab,.tracktabs button,.filters button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:2px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;scroll-behavior:auto !important}
+}
+
+/* Fixed site header — same on every page */
+#oss-site-header{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:color-mix(in srgb,var(--paper) 94%,transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+  font-family:var(--sans);
+}
+#oss-site-header .oss-head-inner{
+  max-width:1100px;margin:0 auto;padding:.55rem 1.25rem .5rem;
+}
+#oss-site-header .oss-row1{
+  display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;
+  margin-bottom:.4rem;
+}
+#oss-site-header .oss-brand{
+  font-family:var(--serif);font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;
+}
+#oss-site-header .oss-brand span{color:var(--teal-d);font-weight:500;font-size:13px}
+#oss-site-header .oss-proto{
+  font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--seal);background:var(--seal-w);border:1px solid var(--line);
+  border-radius:4px;padding:.15rem .45rem;margin-left:.5rem;vertical-align:middle;
+}
+#oss-site-header .oss-controls{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+#oss-site-header .oss-lang{
+  display:flex;border:1px solid var(--strong);border-radius:20px;overflow:hidden;
+}
+#oss-site-header .oss-lang button{
+  font-family:var(--mono);font-size:11px;padding:.28rem .55rem;border:none;
+  background:transparent;color:var(--soft);cursor:pointer;
+}
+#oss-site-header .oss-lang button.on{
+  background:var(--ink);color:var(--paper);
+}
+#oss-site-header .oss-theme{
+  font-family:var(--mono);font-size:11px;border:1px solid var(--strong);border-radius:20px;
+  padding:.28rem .65rem;background:transparent;color:var(--soft);cursor:pointer;
+}
+#oss-site-header .oss-theme:hover{color:var(--ink);border-color:var(--ink)}
+#oss-site-header .oss-nav{
+  display:flex;flex-wrap:wrap;gap:.35rem .85rem;align-items:center;
+  padding-top:.35rem;border-top:1px solid var(--line);
+}
+#oss-site-header .oss-nav a{
+  font-size:12.5px;color:var(--soft);text-decoration:none;font-weight:500;white-space:nowrap;
+}
+#oss-site-header .oss-nav a:hover,#oss-site-header .oss-nav a.on{color:var(--ink)}
+
+/* Offset page content below fixed header */
+body.oss-has-header{padding-top:var(--header-h) !important;margin:0}
+body.oss-has-header .site-bar,
+body.oss-has-header > header:not(#oss-site-header){display:none !important}
+
+@media(max-width:720px){
+  :root{--header-h:96px}
+  #oss-site-header .oss-nav{gap:.3rem .65rem}
+}
+
+/* Shared page primitives — single source (was duplicated per HTML) */
+.wrap{max-width:1080px;margin:0 auto;padding:0 1.5rem}
+.wrap-n{max-width:880px;margin:0 auto;padding:0 1.5rem}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-d)}
+.pagehead{padding:2.8rem 0 1.8rem;border-bottom:1px solid var(--line)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(28px,4vw,40px);margin:.45rem 0 .7rem;line-height:1.15}
+.lead{font-size:15px;color:var(--soft);max-width:62ch}
+.plural,.p50{background:var(--teal-w);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:.75rem 1rem;font-size:13.5px;color:var(--soft);margin:1rem 0;max-width:62ch}
+.plural p,.p50 p{margin:0}
+section{padding:2.6rem 0;border-bottom:1px solid var(--line)}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;margin:0 0 .3rem}
+.section-sub{color:var(--soft);font-size:13.5px;max-width:62ch;margin-bottom:1.3rem}
+.card{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:1.15rem}
+.card h3{font-family:var(--serif);font-size:15px;margin:0 0 .4rem}
+.card p{font-size:13px;color:var(--soft);margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.btn{display:inline-block;font-weight:600;font-size:13.5px;padding:.6rem 1.05rem;border-radius:8px;border:1.5px solid var(--ink);text-decoration:none;color:var(--ink);background:transparent}
+.btn.primary{background:var(--ink);color:var(--paper)}
+[data-theme="dark"] .btn.primary{color:#121816}
+.pagenav{max-width:880px;margin:0 auto;padding:2rem 1.5rem 3rem;display:flex;justify-content:space-between;font-size:13px}
+footer{border-top:1px solid var(--line);padding:1.5rem 0 2.5rem;font-size:12px;color:var(--faint);text-align:center}
+.pill{font-family:var(--mono);font-size:10px;padding:.15rem .4rem;border-radius:4px}
+.pill.ok{background:var(--yes-w);color:var(--yes)}
+.pill.work{background:var(--seal-w);color:var(--seal-d)}
+a{color:var(--teal-d)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55}
+*{box-sizing:border-box}

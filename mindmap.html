@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSS — Project map</title>
+<style>
+  /* Default = follow site light paper theme; dark via [data-theme=dark] */
+  :root{
+    --bg: #F6F4EE;
+    --bg-grid: rgba(32,48,44,0.06);
+    --panel: #FFFFFF;
+    --panel-border: #D9D4C6;
+    --text: #20302C;
+    --text-muted: #4C5B57;
+    --text-dim: #676F6B;
+    --hub: #20302C;
+    --hub-bg1: #E4EEEB;
+    --hub-bg2: #F6F4EE;
+    --hub-border: #B9B2A0;
+    --hub-shadow: rgba(32,48,44,0.12);
+    --ctrl-bg: #FFFFFF;
+    --ctrl-border: #D9D4C6;
+    --ctrl-hover: #E4EEEB;
+    --line-ring: rgba(32,48,44,0.12);
+    --node-bg: #FFFFFF;
+    --node-bg-hover: #F0EDE6;
+    --leaf-bg: #FFFdf8;
+    --leaf-bg-hover: #F3F0E8;
+    --leaf-bg-active: #E4EEEB;
+    --panel-grad-1: #FFFFFF;
+    --panel-grad-2: #F6F4EE;
+    --close-bg: #F0EDE6;
+    --close-border: #D9D4C6;
+    --legend-bg: rgba(246,244,238,0.92);
+    --ctrl-btn-bg: #FFFFFF;
+    --ctrl-btn-border: #D9D4C6;
+    --ctrl-btn-hover-border: #B9B2A0;
+    --explain-bg: #F6F4EE;
+
+    --c-core: #6B5CC4;
+    --c-econ: #B8860B;
+    --c-trans: #1A9AAD;
+    --c-inst: #2A9A6A;
+    --c-def: #C44A5E;
+    --c-tech: #2F6FD0;
+    --c-intl: #B54FA8;
+  }
+  [data-theme="dark"]{
+    --bg: #0A0F16;
+    --bg-grid: rgba(255,255,255,0.035);
+    --panel: #121A24;
+    --panel-border: #223142;
+    --text: #E9EEF3;
+    --text-muted: #7E8FA0;
+    --text-dim: #6D8095;
+    --hub: #E9EEF3;
+    --hub-bg1: #1B2836;
+    --hub-bg2: #0E151E;
+    --hub-border: #2C3E52;
+    --hub-shadow: rgba(0,0,0,0.55);
+    --ctrl-bg: #121A24;
+    --ctrl-border: #223142;
+    --ctrl-hover: #1A2430;
+    --line-ring: rgba(255,255,255,0.08);
+    --node-bg: #131B24;
+    --node-bg-hover: #1A2430;
+    --leaf-bg: #0E161F;
+    --leaf-bg-hover: #101A24;
+    --leaf-bg-active: #132030;
+    --panel-grad-1: #10171F;
+    --panel-grad-2: #0C1219;
+    --close-bg: #1B2530;
+    --close-border: #2C3E52;
+    --legend-bg: rgba(18,26,36,0.7);
+    --ctrl-btn-bg: #131B24;
+    --ctrl-btn-border: #223142;
+    --ctrl-btn-hover-border: #3A4E63;
+    --explain-bg: #0E151E;
+
+    --c-core: #9B8CF5;
+    --c-econ: #E7B23D;
+    --c-trans: #34C6DA;
+    --c-inst: #3FC091;
+    --c-def: #E0637A;
+    --c-tech: #4E8FF7;
+    --c-intl: #DA6FCB;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    overflow:hidden;
+  }
+  .mono{ font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+
+  #app{ position:relative; width:100%; height:100vh; }
+
+  #bg-grid{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events:none;
+  }
+
+  header{
+    position:absolute; top:0; left:0; right:0;
+    padding: 18px 24px 12px 24px;
+    z-index:5;
+    pointer-events:none;
+  }
+  header .eyebrow{
+    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text-dim); font-family:inherit;
+  }
+  header h1{
+    margin:2px 0 2px 0; font-size:20px; font-weight:600; letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0; font-size:12.5px; color:var(--text-muted); max-width:520px; line-height:1.5;
+  }
+
+  #canvas-wrap{
+    position:absolute; inset:0;
+    overflow:hidden;
+    cursor: grab;
+    touch-action: none;
+  }
+  #canvas-wrap.panning{ cursor: grabbing; }
+  #zoom-layer{
+    position:absolute; inset:0;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  #canvas{
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    transform-origin: 0 0;
+  }
+  svg#lines{ position:absolute; top:0; left:0; overflow:visible; pointer-events:none; }
+
+  .node{
+    position:absolute;
+    transform: translate(-50%,-50%);
+    cursor:grab;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  .node.dragging{ cursor:grabbing; z-index:20; }
+
+  .hub{
+    width:118px; height:118px; border-radius:50%;
+    background: radial-gradient(circle at 32% 28%, var(--hub-bg1), var(--hub-bg2) 72%);
+    border:1.5px solid var(--hub-border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 12px 30px var(--hub-shadow);
+    cursor:default;
+  }
+  .hub .t1{ font-size:19px; font-weight:700; letter-spacing:0.02em; color:var(--hub); }
+  .hub .t2{ font-size:9px; color:var(--text-dim); letter-spacing:0.08em; margin-top:3px; text-transform:uppercase; }
+
+  .domain{
+    display:flex; align-items:center; gap:9px;
+    padding:9px 14px 9px 11px;
+    border-radius:10px;
+    background: var(--node-bg);
+    border:1.5px solid var(--dc);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    white-space:nowrap;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .domain:hover{ transform: translate(-50%,-50%) scale(1.035); }
+  .domain.expanded{ box-shadow: 0 0 0 1px var(--dc), 0 8px 22px rgba(0,0,0,0.45); }
+  .domain .code{
+    font-size:10px; color:var(--dc); border:1px solid var(--dc);
+    border-radius:5px; padding:2px 5px; opacity:0.9; flex:0 0 auto;
+  }
+  .domain .label{ font-size:12.5px; font-weight:600; line-height:1.2; color:var(--text); }
+  .domain .src{ font-size:9.5px; color:var(--text-dim); margin-top:1px; }
+  .domain .chev{ font-size:9px; color:var(--text-dim); transition: transform .15s ease; margin-left:2px; }
+  .domain.expanded .chev{ transform: rotate(90deg); color:var(--dc); }
+
+  .leaf{
+    padding:6px 11px;
+    border-radius:8px;
+    background: var(--leaf-bg);
+    border:1px solid var(--dc-dim);
+    max-width:168px;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .leaf:hover{ transform: translate(-50%,-50%) scale(1.05); border-color:var(--dc); background:var(--leaf-bg-hover); }
+  .leaf.active{ border-color:var(--dc); background:var(--leaf-bg-active); }
+  .leaf .label{ font-size:11px; font-weight:500; line-height:1.3; color:var(--text); }
+  .leaf .anchor{
+    display:inline-block; margin-top:4px; font-size:8.5px; color:var(--dc);
+    background: color-mix(in srgb, var(--dc) 14%, transparent);
+    border-radius:4px; padding:1.5px 5px; letter-spacing:0.01em;
+  }
+
+  .conn{ stroke-linecap:round; fill:none; }
+  .tick{ stroke-linecap:round; }
+
+  /* Detail panel */
+  #panel{
+    position:absolute; top:0; right:0; height:100%;
+    width:320px;
+    background: linear-gradient(180deg, var(--panel-grad-1), var(--panel-grad-2));
+    border-left:1px solid var(--panel-border);
+    padding:20px 20px 20px 22px;
+    transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.2,.8,.2,1);
+    z-index:10;
+    overflow-y:auto;
+  }
+  #panel.open{ transform:translateX(0); }
+  #panel .close{
+    position:absolute; top:14px; right:14px;
+    width:26px; height:26px; border-radius:7px;
+    background:var(--close-bg); border:1px solid var(--close-border); color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px;
+  }
+  #panel .p-eyebrow{
+    font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
+    padding:3px 8px; border-radius:5px; display:inline-block;
+    border:1px solid var(--dc); color:var(--dc); margin-bottom:12px;
+  }
+  #panel h2{ font-size:17px; margin:0 0 10px 0; line-height:1.35; }
+  #panel .p-hint{ font-size:13px; color:var(--text-muted); line-height:1.55; margin-bottom:14px; }
+  #panel .p-explain{
+    font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:16px;
+    background:var(--explain-bg); border:1px solid var(--panel-border); border-radius:10px; padding:12px 13px;
+  }
+  #panel .p-explain-label{
+    font-size:9.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  #panel .p-src{
+    font-size:11px; color:var(--text-dim); border-top:1px solid var(--panel-border);
+    padding-top:12px; display:flex; justify-content:space-between; align-items:center;
+  }
+  #panel .p-src b{ color:var(--text-muted); font-weight:600; }
+  #panel .empty{ color:var(--text-dim); font-size:13px; line-height:1.6; margin-top:40%; text-align:center; }
+
+  /* Legend + controls */
+  #legend{
+    position:absolute; left:24px; bottom:20px; z-index:5;
+    display:flex; flex-direction:column; gap:5px;
+    background:var(--legend-bg); backdrop-filter: blur(6px);
+    padding:10px 12px; border-radius:10px; border:1px solid var(--panel-border);
+  }
+  #legend .row{ display:flex; align-items:center; gap:7px; font-size:10.5px; color:var(--text-muted); }
+  #legend .dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+
+  #controls{
+    position:absolute; right:24px; bottom:20px; z-index:5;
+    display:flex; gap:8px;
+  }
+  #controls button{
+    background:var(--ctrl-btn-bg); border:1px solid var(--ctrl-btn-border); color:var(--text-muted);
+    font-size:11px; padding:8px 12px; border-radius:8px; cursor:pointer;
+    font-family:inherit;
+  }
+  #controls button:hover{ color:var(--text); border-color:var(--ctrl-btn-hover-border); }
+
+  @media (max-width: 720px){
+    header{ padding:14px 16px 8px 16px; }
+    header h1{ font-size:17px; }
+    header p{ display:none; }
+    #panel{ width:100%; height:56%; top:auto; bottom:0; left:0; right:auto;
+      transform: translateY(100%); border-left:none; border-top:1px solid var(--panel-border);
+      border-radius:16px 16px 0 0; }
+    #panel.open{ transform:translateY(0); }
+    #legend{ display:none; }
+    #controls{ left:16px; right:16px; bottom:16px; justify-content:center; }
+  }
+</style>
+
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* Mindmap fills viewport below fixed site header — no body padding fight */
+  html, body.oss-has-header{
+    height: 100% !important;
+    overflow: hidden !important;
+    padding-top: 0 !important;
+    margin: 0 !important;
+  }
+  body.oss-has-header #app{
+    position: fixed;
+    top: var(--header-h, 72px);
+    left: 0; right: 0; bottom: 0;
+    height: auto !important;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+  body.oss-has-header #bg-grid,
+  body.oss-has-header #canvas-wrap{
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.oss-has-header header.mm-local{
+    display: none !important; /* site nav already identifies the module */
+  }
+  body.oss-has-header #canvas-wrap{
+    position: absolute;
+    inset: 0;
+  }
+  body.oss-has-header #controls{
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+    z-index: 8;
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: calc(100% - 48px);
+  }
+  body.oss-has-header #legend{
+    position: absolute;
+    left: 24px;
+    bottom: 20px;
+    z-index: 8;
+    display: flex !important;
+  }
+  body.oss-has-header #panel{
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    max-height: none;
+    z-index: 12;
+    margin: 0;
+    border-radius: 0;
+    /* flush under site header — no gap */
+  }
+  
+  
+  @media (max-width: 720px){
+    body.oss-has-header #legend{ display: none !important; }
+    body.oss-has-header #panel{
+      top: auto; bottom: 0; left: 0; right: 0;
+      height: 52%; width: 100%;
+    }
+    body.oss-has-header #controls{
+      left: 12px; right: 12px; bottom: 12px;
+      justify-content: center;
+    }
+  }
+</style>
+
+<script>
+(function(){
+  var k='oss-theme';
+  var s=localStorage.getItem(k);
+  if(s==='dark'||(!s&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))
+    document.documentElement.setAttribute('data-theme','dark');
+})();
+</script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <div id="bg-grid"></div>
+  <header class="mm-local">
+    <div class="eyebrow mono">ОСО / OSS — Mind Map v1.0</div>
+    <h1>Операционная Система Общества</h1>
+    <p>7 доменов проекта вокруг ядра. Клик по домену — развернуть подтемы. Клик по любому узлу — детали справа.</p>
+  </header>
+  <div id="canvas-wrap">
+    <div id="zoom-layer">
+      <svg id="lines"></svg>
+      <div id="canvas"></div>
+    </div>
+  </div>
+  <div id="legend"></div>
+  <div id="controls">
+    <button id="btn-zoom-out" title="Отдалить">−</button>
+    <button id="btn-zoom-reset" title="Сбросить вид">100%</button>
+    <button id="btn-zoom-in" title="Приблизить">+</button>
+    <button id="btn-expand">Развернуть все</button>
+    <button id="btn-collapse">Свернуть все</button>
+  </div>
+  <div id="panel">
+    <div class="close" id="panel-close">✕</div>
+    <div id="panel-body"><div class="empty">Выберите узел на карте,<br>чтобы увидеть детали.</div></div>
+  </div>
+</div>
+
+<script>
+
+// --- i18n for mindmap UI + domain labels ---
+const MM_LANG = (function(){
+  var L = localStorage.getItem('oss-lang') || 'en';
+  if (L === 'uk') L = 'ua';
+  return (L === 'ua' || L === 'ru') ? L : 'en';
+})();
+
+const MM_UI = {
+  en: {
+    eye: 'OSS — Project mind map v1.0',
+    h1: 'Operating System of Society',
+    sub: 'Seven project domains around the core. Click a domain to expand topics. Click any node for details.',
+    zoomOut: 'Zoom out', zoomReset: 'Reset view', zoomIn: 'Zoom in',
+    expand: 'Expand all', collapse: 'Collapse all',
+    empty: 'Select a node on the map<br>to see details.',
+    hub: 'CORE', domainTag: 'DOMAIN', subtopicTag: 'SUBTOPIC', plainWords: 'In plain words', source: 'Source'
+  },
+  ua: {
+    eye: 'ОСС — Карта проєкту v1.0',
+    h1: 'Операційна Система Суспільства',
+    sub: '7 доменів проєкту навколо ядра. Клік по домену — розгорнути підтеми. Клік по вузлу — деталі справа.',
+    zoomOut: 'Віддалити', zoomReset: 'Скинути вигляд', zoomIn: 'Наблизити',
+    expand: 'Розгорнути все', collapse: 'Згорнути все',
+    empty: 'Оберіть вузол на карті,<br>щоб побачити деталі.',
+    hub: 'ЯДРО', domainTag: 'ДОМЕН', subtopicTag: 'ПІДТЕМА', plainWords: 'Простими словами', source: 'Джерело'
+  },
+  ru: {
+    eye: 'ОСО — Карта проекта v1.0',
+    h1: 'Операционная Система Общества',
+    sub: '7 доменов проекта вокруг ядра. Клик по домену — развернуть подтемы. Клик по любому узлу — детали справа.',
+    zoomOut: 'Отдалить', zoomReset: 'Сбросить вид', zoomIn: 'Приблизить',
+    expand: 'Развернуть все', collapse: 'Свернуть все',
+    empty: 'Выберите узел на карте,<br>чтобы увидеть детали.',
+    hub: 'ЯДРО', domainTag: 'ДОМЕН', subtopicTag: 'ПОДТЕМА', plainWords: 'Простыми словами', source: 'Источник'
+  }
+};
+
+// Domain + child label/summary overlays (explain stays from source unless overridden)
+const MM_DOM = {
+  en: {
+    core: {label:'Philosophy & Core', src:'Sections 1–2', summary:'Constitutional core (Arts. I–XI) — people as the source of legitimacy; rights recognized by existence, not granted as privilege.',
+      explain:"The Core is the set of rules that can't be broken, no matter what. Think of a constitution written so that no one — not the president, not the police, not even a voting majority — can take away a person's basic rights. Changing these rules requires every existing branch of the project to agree, after at least a year of open discussion — deliberately made very hard, so the Core can't be rewritten for short-term convenience."},
+    econ: {label:'Economy / Geolibertarianism', src:'Section 3', summary:'LVT, Citizen’s Dividend, Sovereign Fund — rent on commons, not a tax on labor.',
+      explain:"Instead of taxing wages, purchases, or business profits, the system charges only for land — specifically the land itself, not the house or factory built on it. The idea: no one created the land, it came to everyone from nature, so it's fair that whoever uses it pays the rest of the citizens a small rent. The money collected goes into a shared fund and comes back to people as a dividend — like in Alaska, where every resident gets an annual payout from the state's oil revenue."},
+    trans: {label:'Transparency / Leverage', src:'Section 4', summary:'Disclosure of systemic influence and surveillance clients without turning the citizen into a naked profile.',
+      explain:"If some organization or person has so much influence that their problems could bring down the whole system (like a big bank whose failure could trigger a financial crisis), society has the right to know about it in advance — not only after everything has already collapsed. Same with surveillance: if someone commissions monitoring of citizens, society should know who exactly ordered it, not just who formally carried it out."},
+    inst: {label:'Accountability institutions', src:'Section 5', summary:'Ratings as data only, court/arbitration, conscientious refusal, custody of orders.',
+      explain:"This is about making power answer for its actions, even without familiar elections or a free press. Officials and companies get a public rating for honesty and quality of work, disputed cases are decided by an independent lottery-selected court (like a jury), and a soldier or police officer ordered to do something illegal is legally protected if they refuse to carry it out."},
+    def: {label:'Defense', src:'Section 6', summary:'Militia model and contract instead of conscription; digitized chain of command.',
+      explain:"Instead of an army that conscripts everyone against their will, defense is built on volunteers who chose to serve, plus a model like Switzerland's, where weapons are kept at home by ordinary people, not only in barracks. It's a trade-off: the army will be smaller, but it won't contain people who didn't want to be there."},
+    tech: {label:'Technology / Agents', src:'Section 7', summary:'Agent architecture, hierarchical domains, anti-concentration in compute.',
+      explain:"AI agents and digital tools help the system run — for example, they fact-check, notice when an official says one thing while people think another, and monitor budget transparency. But it isn't run by one all-powerful AI; instead there are many separate specialist programs, each with its own narrow task, so no one can gain control over everything at once."},
+    intl: {label:'International + Open questions', src:'Sections 8, 10', summary:'Charter-city fork model and an honest registry of what is not yet settled.',
+      explain:"The project doesn't try to take over existing countries — instead it proposes starting in one small place (modeled on existing experimental cities like Próspera in Honduras), proving the system works, and only then expanding. It's also honest that a lot is still unresolved — exact voting rules, for instance — deliberately left open rather than made up in advance."}
+  },
+  ua: {
+    core: {label:'Філософія і Ядро', src:'Розділи 1–2', summary:'Конституційне ядро (Ст. I–XI) — люди як джерело легітимності; права за фактом існування, не як привілей.',
+      explain:'Ядро — це правила, які не можна порушувати, хай там що станеться. Уяви конституцію, написану так, щоб ніхто — ні президент, ні поліція, ні навіть більшість на голосуванні — не міг відібрати в людини її базові права. Змінити ці правила можна, лише якщо згодні абсолютно всі наявні відгалуження проєкту, і лише після року відкритого обговорення — це навмисно зроблено дуже складним, щоб Ядро не переписували під сьогохвилинну вигоду.'},
+    econ: {label:'Економіка / Геолібертаріанство', src:'Розділ 3', summary:'LVT, Citizen’s Dividend, Sovereign Fund — рента зі спільного, не податок на працю.',
+      explain:'Замість податків на зарплату, покупки чи прибуток бізнесу система бере плату лише за землю — точніше, за саму землю, а не за будинок чи завод, побудований на ній. Ідея в тому, що землю ніхто не створював — вона дісталася всім від природи, тож справедливо, щоб кожен, хто нею користується, платив решті громадян невелику ренту. Зібрані гроші йдуть у спільний фонд і повертаються людям у вигляді дивіденду — як на Алясці, де кожен житель щорічно отримує виплату з нафтових доходів штату.'},
+    trans: {label:'Прозорість / Leverage', src:'Розділ 4', summary:'Розкриття системного впливу і замовника стеження без «голого профілю» громадянина.',
+      explain:'Якщо якась організація чи людина має настільки великий вплив, що їхні проблеми можуть обвалити всю систему (як великий банк, через який може початися фінансова криза), — суспільство має право знати про це заздалегідь, а не лише коли все вже впало. Те саме зі стеженням: якщо хтось замовляє спостереження за громадянами, суспільство має знати, хто саме це замовив, а не тільки хто формально це виконав.'},
+    inst: {label:'Інститути підзвітності', src:'Розділ 5', summary:'Рейтинг лише як дані, суд/арбітраж, відмова за совістю, custody наказів.',
+      explain:'Це про те, як змусити владу відповідати за свої вчинки, навіть якщо немає звичних виборів чи преси. Чиновники і компанії отримують публічний рейтинг за чесність і якість роботи, спірні справи вирішує незалежний суд за жеребом (як присяжні), а військовий чи поліціянт, якому наказали зробити щось незаконне, юридично захищений, якщо він відмовиться виконувати такий наказ.'},
+    def: {label:'Оборона', src:'Розділ 6', summary:'Міліційна модель і контракт замість призову; оцифрований ланцюг командування.',
+      explain:'Замість армії, куди всіх забирають проти волі, — оборона будується на добровольцях, які самі вирішили служити, плюс на моделі на кшталт швейцарської, де зброя зберігається вдома у звичайних людей, а не лише в казармах. Це компроміс: армія вийде не такою чисельною, зате в ній не буде людей, які не хотіли там опинитися.'},
+    tech: {label:'Технології / Агенти', src:'Розділ 7', summary:'Агентна архітектура, доменні ієрархії, анти-концентрація обчислень.',
+      explain:"ІІ-агенти й цифрові інструменти допомагають системі працювати — наприклад, перевіряють факти, помічають, коли чиновник каже одне, а люди думають інше, стежать за прозорістю бюджету. Але керування влаштоване не одним всемогутнім ІІ, а безліччю окремих програм-фахівців, у кожної — своє вузьке завдання, щоб ніхто не міг отримати контроль над усім одразу."},
+    intl: {label:'Міжнародне + Відкриті питання', src:'Розділи 8, 10', summary:'Модель форка через чартерні міста та чесний реєстр невирішеного.',
+      explain:'Проєкт не намагається захопити наявні країни — натомість пропонується почати з одного невеликого місця (за зразком наявних експериментальних міст на кшталт Próspera в Гондурасі), довести, що система працює, і лише потім розширюватися. При цьому чесно визнається, що багато чого ще не вирішено — наприклад, точні правила для голосування — навмисно залишено відкритим, а не вигадано заздалегідь.'}
+  },
+  ru: {
+    core: {label:'Философия и Ядро', summary:'Конституционное ядро (Ст. I–XI) — люди как источник легитимности, права по факту существования.'},
+    econ: {label:'Экономика / Геолибертарианство', summary:'LVT, Citizen’s Dividend, Sovereign Fund — рента с общего, не налог на труд.'},
+    trans: {label:'Прозрачность / Leverage', summary:'Раскрытие системного влияния и заказчика слежки без «голого профиля» гражданина.'},
+    inst: {label:'Институты подотчётности', summary:'Рейтинг только как данные, суд/арбитраж, отказ по совести, custody приказов.'},
+    def: {label:'Оборона', summary:'Милиционная модель и контракт вместо призыва; оцифрованная цепочка командования.'},
+    tech: {label:'Технологии / Агенты', summary:'Агентная архитектура, доменные иерархии, анти-концентрация вычислений.'},
+    intl: {label:'Международное + Открытые вопросы', summary:'Модель форка через чартерные города и честный реестр нерешённого.'}
+  }
+};
+
+const MM_CHILD = {
+  en: {
+    'NAP и самопринадлежность':'NAP & self-ownership',
+    'Presumption of Freedom':'Presumption of Freedom',
+    'Запрет мобилизации':'Ban on mobilization',
+    'Анти-концентрация власти':'Anti-concentration of power',
+    'Реципрокная прозрачность':'Reciprocal transparency',
+    'Genesis-согласие':'Genesis consent',
+    'Право выхода':'Right of exit',
+    'Порядок изменения Ядра':'Core amendment procedure',
+    'Равенство перед законом':'Equality before the law',
+    'Риск: координация как оружие':'Risk: coordination as a weapon',
+    'Явка и экстренный путь':'Turnout & emergency path',
+    'Land Value Tax':'Land Value Tax',
+    'Оценка земли':'Land valuation',
+    'Защита от бездомности':'Homelessness protection',
+    'Citizen’s Dividend':'Citizen’s Dividend',
+    'Sovereign Fund':'Sovereign Fund',
+    'Надбавка за простой':'Vacancy surcharge',
+    'Отказ от ресурсной экономики':'Rejection of resource economy',
+    'Наследство: чьё право реализовано':'Inheritance: whose right is realized',
+    'SIFI-модель раскрытия':'SIFI-style disclosure',
+    'Раскрытие заказчика слежки':'Surveillance client disclosure',
+    'Хрупкость аналогов':'Fragility of analogues',
+    'Рейтинговая система':'Rating system',
+    'Corporate Accountability':'Corporate Accountability',
+    'Судебный/арбитражный модуль':'Court / arbitration module',
+    'Conscientious Refusal':'Conscientious Refusal',
+    'Custody Chain записи приказов':'Custody chain of orders',
+    'Non-derogable acts':'Non-derogable acts',
+    'Local Integration Capacity':'Local Integration Capacity',
+    'Принцип 5.0 — наблюдаемое поведение':'Principle 5.0 — observed behavior',
+    'Швейцарская милиционная модель':'Swiss militia model',
+    'Контракт вместо призыва':'Contract instead of conscription',
+    'Digitized Chain-of-Command':'Digitized Chain-of-Command',
+    'Hierarchical агентная архитектура':'Hierarchical agent architecture',
+    'Чартерные города как модель форка':'Charter cities as fork model',
+    'Урок Próspera':'Próspera lesson',
+    'Риск алгоритмического сговора':'Risk of algorithmic collusion',
+    'InTruth фактчекинг':'InTruth fact-checking',
+    'Гражданское Polis-приложение':'Civic Polis app',
+    'Досье связей чиновника':"Official's connections dossier",
+    'Бюджетная прозрачность':'Budget transparency',
+    'Прозрачность влияния: улица→трибуна':'Influence transparency: street to podium',
+    'Три поправки для первого форка':'Three amendments for the first fork',
+    'Реестр открытых вопросов':'Open questions registry',
+    'Связность между форками':'Connectivity between forks'
+  },
+  ua: {
+    'NAP и самопринадлежность':'NAP і самоналежність',
+    'Запрет мобилизации':'Заборона мобілізації',
+    'Анти-концентрация власти':'Анти-концентрація влади',
+    'Реципрокная прозрачность':'Реципрокна прозорість',
+    'Genesis-согласие':'Genesis-згода',
+    'Право выхода':'Право виходу',
+    'Порядок изменения Ядра':'Порядок зміни Ядра',
+    'Равенство перед законом':'Рівність перед законом',
+    'Риск: координация как оружие':'Ризик: координація як зброя',
+    'Явка и экстренный путь':'Явка і екстрений шлях',
+    'Оценка земли':'Оцінка землі',
+    'Защита от бездомности':'Захист від бездомності',
+    'Надбавка за простой':'Надбавка за простій',
+    'Отказ от ресурсной экономики':'Відмова від ресурсної економіки',
+    'Наследство: чьё право реализовано':'Спадщина: чиє право реалізовано',
+    'SIFI-модель раскрытия':'SIFI-модель розкриття',
+    'Раскрытие заказчика слежки':'Розкриття замовника стеження',
+    'Хрупкость аналогов':'Крихкість аналогів',
+    'Рейтинговая система':'Рейтингова система',
+    'Судебный/арбитражный модуль':'Судовий/арбітражний модуль',
+    'Custody Chain записи приказов':'Custody Chain запису наказів',
+    'Принцип 5.0 — наблюдаемое поведение':'Принцип 5.0 — спостережувана поведінка',
+    'Швейцарская милиционная модель':'Швейцарська міліційна модель',
+    'Контракт вместо призыва':'Контракт замість призову',
+    'Hierarchical агентная архитектура':'Hierarchical агентна архітектура',
+    'Чартерные города как модель форка':'Чартерні міста як модель форка',
+    'Урок Próspera':'Урок Próspera',
+    'Риск алгоритмического сговора':'Ризик алгоритмічної змови',
+    'InTruth фактчекинг':'InTruth фактчекінг',
+    'Гражданское Polis-приложение':'Громадянський застосунок Polis',
+    'Досье связей чиновника':"Досьє зв'язків чиновника",
+    'Бюджетная прозрачность':'Бюджетна прозорість',
+    'Прозрачность влияния: улица→трибуна':'Прозорість впливу: вулиця→трибуна',
+    'Три поправки для первого форка':'Три поправки для першого форка',
+    'Реестр открытых вопросов':'Реєстр відкритих питань',
+    'Связность между форками':"Зв'язність між форками"
+  }
+};
+
+const MM_TR = {
+  "NAP и самопринадлежность": { en:{hint:"Everyone owns their body, time, and labor outright. Initiating aggression is banned.", explain:"No one has the right to hit you, rob you, or force you to do something against your will — not another person, not the state. Your body and your labor belong only to you, and this rule works the same for an ordinary citizen and for a police officer."}, ua:{hint:"Кожен безроздільно володіє тілом, часом, працею. Заборона ініціації агресії.", explain:"Ніхто не має права бити, грабувати чи змушувати тебе робити щось проти волі — ні інша людина, ні держава. Твоє тіло і твоя праця належать тільки тобі, і це правило працює однаково і для звичайного громадянина, і для поліцейського."} },
+  "Presumption of Freedom": { en:{hint:"Ambiguity is read in favor of freedom. Modeled on Grundgesetz Art. 2 and the US 9th Amendment.", explain:"If a law is written vaguely and it's unclear what exactly it allows or forbids, the default assumption is that it's allowed. This protects against power interpreting foggy laws in its own favor, just to ban something."}, ua:{hint:"Невизначеність тлумачиться на користь свободи. За зразком Grundgesetz Ст.2 та 9-ї поправки США.", explain:"Якщо закон написаний нечітко і незрозуміло, що саме він дозволяє, а що забороняє, — за замовчуванням вважається, що дозволено. Це захист від ситуації, коли влада тлумачить туманні закони на свою користь, аби щось заборонити."} },
+  "Запрет мобилизации": { en:{hint:"No mandatory service. Defense is a voluntary contract only.", explain:"No one can be forcibly conscripted into the army. You can only serve by your own choice and under contract — like a regular job, not a duty imposed on you."}, ua:{hint:"Жодної обов'язкової служби. Оборона — лише добровільний контракт.", explain:"Нікого не можна силою забрати в армію. Служити можна тільки за власним бажанням і за контрактом — як звичайну роботу, а не повинність."} },
+  "Анти-концентрация власти": { en:{hint:"No single institution controls enforcement, data, and finance at once.", explain:"The police, the services that collect data about people, and those who control the money are three separate, independent structures. If all of that were in one set of hands, abuse of power would be far too easy."}, ua:{hint:"Жоден інститут не контролює одночасно правозастосування, дані й фінанси.", explain:"Поліція, служби, що збирають дані про людей, і ті, хто розпоряджається грошима, — це три різні, незалежні одна від одної структури. Якби все це було в одних руках, зловживати владою було б занадто легко."} },
+  "Реципрокная прозрачность": { en:{hint:"The Palantir principle: whoever deploys surveillance accepts being surveilled themselves. Applies to the beneficial initiator.", explain:"If the state or a company is watching you, you have the right to know exactly who's behind it and why. Surveillance isn't a one-way street: whoever watches others must also be watched."}, ua:{hint:"Принцип Palantir: хто розгортає стеження, визнає стеження за собою. Застосовується до бенефіціарного ініціатора.", explain:"Якщо держава чи компанія стежить за тобою, у тебе є право знати, хто саме за цим стоїть і навіщо. Стеження — це не вулиця з одностороннім рухом: той, хто спостерігає за іншими, теж має бути під наглядом."} },
+  "Genesis-согласие": { en:{hint:"A soulbound signature. Basic rights are unconditional. Voice and roles require explicit consent.", explain:"Each person confirms their participation in the system once, with a digital signature that can't be transferred or forged. But a person's basic rights don't depend on whether they signed it — consent is only needed to vote and hold roles, not to have the right to life and freedom."}, ua:{hint:"Soulbound-підпис. Базові права — безумовні. Голос і ролі — за явною згодою.", explain:"Кожна людина один раз підтверджує свою участь у системі цифровим підписом, який не можна передати іншому і не можна підробити. Але базові права людини не залежать від того, підписала вона це чи ні — згода потрібна лише для того, щоб голосувати і займати ролі, а не для того, щоб мати право на життя і свободу."} },
+  "Право выхода": { en:{hint:"Fork or relocate without losing personal rights or assets.", explain:"If you don't like how things are set up, you can leave — create your own separate version of the system (a fork) or move to another one — without losing your rights or your property."}, ua:{hint:"Форк або релокація без втрати особистих прав і активів.", explain:"Якщо тобі не подобається, як усе влаштовано, ти можеш піти — створити свою окрему версію системи (форк) або переїхати в іншу — і при цьому не втратиш ні своїх прав, ні свого майна."} },
+  "Порядок изменения Ядра": { en:{hint:"Unanimous consent of all active forks + at least 1 year of public debate.", explain:"Changing the base rules is deliberately made almost impossible: every existing independent branch of the project has to agree, and the debate has to run for at least a year. This protects against anyone rushing through amendments that suit them."}, ua:{hint:"Одностайність усіх активних форків + мінімум 1 рік публічного обговорення.", explain:"Базові правила змінити майже неможливо навмисно: потрібно, щоб погодились абсолютно всі наявні незалежні гілки проєкту, і щоб обговорення тривало щонайменше рік. Це захист від того, щоб хтось поспіхом провів зручні для себе поправки."} },
+  "Равенство перед законом": { en:{hint:"No office grants procedural immunity from enforcement.", explain:"The president, a judge, a police officer — none of them is above the law just because of their position. If they break the rules, they're tried the same way as an ordinary person, with no special immunity."}, ua:{hint:"Жодна посада не дає процедурного імунітету від правозастосування.", explain:"Президент, суддя, поліціянт — ніхто з них не вищий за закон просто через свою посаду. Якщо вони порушують правила, їх судять так само, як звичайну людину, без особливої недоторканності."} },
+  "Риск: координация как оружие": { en:{hint:"Choi & Bowles, Science 2007 — the coevolution of parochial altruism and warfare. Honestly not a solved risk.", explain:"Researchers noticed that people's ability to unite and sacrifice for their own group historically evolved together with the ability to wage war on other groups — two sides of the same evolutionary coin. The project is honest about this: it's still unclear how to keep a strong sense of “us” from turning into readiness to see everyone else as “them.”"}, ua:{hint:"Choi & Bowles, Science 2007 — коеволюція парохіального альтруїзму і війни. Чесно не знятий ризик.", explain:"Науковці помітили, що здатність людей об'єднуватися і жертвувати собою заради своєї групи історично розвивалася разом зі здатністю воювати проти інших груп — це ніби два боки однієї еволюційної монети. Проєкт чесно визнає: поки незрозуміло, як зробити так, щоб сильне відчуття «своїх» не перетворювалося на готовність бачити в інших «чужих»."} },
+  "Явка и экстренный путь": { en:{hint:"DEPLOYED. Turnout transparency instead of a quorum + a 72-hour path for urgent technical fixes, auto-expiring after 90 days.", explain:"It used to be unclear: if turnout was low but the required 2/3 was reached among those who showed up, is that legitimate or not? The fix — not a hard “minimum voter count” (that would let opponents just stay home and sink a decision), but always publishing turnout honestly next to the result. And separately: for urgent technical breakdowns (not value-laden decisions), there's a fast 72-hour path instead of the usual 90 days — but it automatically stops applying if the decision isn't properly confirmed."}, ua:{hint:"DEPLOYED. Прозорість явки замість кворуму + 72-годинний шлях для термінових технічних фіксів з автозакінченням через 90 днів.", explain:"Раніше було незрозуміло: якщо мало людей проголосувало, а потрібні 2/3 набралися серед тих, хто прийшов, — це законно чи ні? Рішення — не вводити жорстке «мінімальне число тих, хто голосує» (це дало б противникам рішення можливість просто не приходити і цим його зірвати), а завжди чесно публікувати явку поруч із результатом. І окремо: для термінових технічних поломок (не для важливих ціннісних рішень) є швидкий шлях у 72 години замість звичайних 90 днів — але він автоматично перестає діяти, якщо рішення не підтвердили по-справжньому."} },
+  "Land Value Tax": { en:{hint:"Rate corridor 0.1–2.0%, benchmark is Estonia (the only country practicing pure Georgism).", explain:"You pay a small percentage of the land's value alone (not the house on it) every year — from 0.1% to 2%. Estonia is the only country that has genuinely tried living by this principle, and it became the benchmark."}, ua:{hint:"Коридор ставки 0.1–2.0%, еталон — Естонія (єдина країна з чистим джорджизмом на практиці).", explain:"Платиш невеликий відсоток від вартості саме землі (не будинку на ній) щороку — від 0.1% до 2%. Естонія — єдина країна, яка по-справжньому спробувала жити за таким принципом, і це стало орієнтиром."} },
+  "Оценка земли": { en:{hint:"Residual method + CAMA structure + an oracle based on hedonic regression over the deals registry.", explain:"To figure out how much the land alone is worth, apart from the house, mathematical models compare similar plots and real transaction prices in the area — roughly what real-estate agencies already do, but by a strict formula instead of a guess."}, ua:{hint:"Метод залишку + CAMA-структура + оракул на гедонічній регресії за реєстром угод.", explain:"Щоб зрозуміти, скільки коштує земля окремо від будинку, використовують математичні моделі, які порівнюють подібні ділянки та реальні ціни угод у окрузі — приблизно так само, як це роблять агентства нерухомості, але за строгою формулою, а не на око."} },
+  "Защита от бездомности": { en:{hint:"Three lines: Dividend offset → deferral with a lien (up to 80% equity) → emergency bridge loan.", explain:"If someone can't pay the land tax, there are three safety layers: first, the tax is simply deducted from their own dividend, then payment can be deferred against the future value of the home, and only as a last resort — an emergency loan. The goal: no one loses their home because of this tax."}, ua:{hint:"Три лінії: залік Dividend → deferral із заставою (до 80% equity) → екстрений bridge-кредит.", explain:"Якщо людині нема чим платити земельний податок, є три рівні підстраховки: спочатку податок просто віднімають з її ж дивіденду, потім можна відкласти оплату під заставу майбутньої вартості будинку, і лише в крайньому разі — екстрений кредит. Мета — щоб ніхто не втратив житло через цей податок."} },
+  "Citizen’s Dividend": { en:{hint:"Not conditioned on Genesis consent; paid to children too. Analogous to the Alaska PFD.", explain:"Every person — including children — regularly receives a share of the money collected from the land tax, simply for existing, not for any work. Similar to how every Alaska resident gets an annual payout from the state's oil revenue."}, ua:{hint:"Не обумовлений Genesis-згодою, нараховується і дітям. Аналог — Alaska PFD.", explain:"Кожна людина — включно з дітьми — регулярно отримує частину грошей, зібраних із земельного податку, просто за те, що вона існує, а не за якусь роботу. Схоже на те, як на Алясці кожен житель штату отримує щорічну виплату з нафтових доходів."} },
+  "Sovereign Fund": { en:{hint:"Four-tier structure modeled on GPFG (Norway): Strategist/Operator/Ethics body/Council.", explain:"Part of the money collected isn't spent right away — it's invested in a long-term shared fund, like Norway's oil fund, one of the largest in the world, so the money keeps working for future generations instead of running out in a single year."}, ua:{hint:"Чотирирівнева структура за зразком GPFG (Норвегія): Стратег/Оператор/Ethics-орган/Рада.", explain:"Частина зібраних грошей не витрачається одразу, а вкладається в довгостроковий спільний фонд — як норвезький нафтовий фонд, один з найбільших у світі, — щоб гроші працювали на майбутні покоління, а не закінчувалися за один рік."} },
+  "Надбавка за простой": { en:{hint:"+2–3 pp for 6+ months idle. Vancouver: vacancy fell from 0.9% to 0.49% by 2024.", explain:"If someone owns vacant property and deliberately doesn't rent or sell it (say, waiting for the price to rise), they pay an increased tax. In Vancouver, this measure genuinely cut the amount of vacant housing almost in half."}, ua:{hint:"+2–3 в.п. за простій 6+ міс. Ванкувер: вакантність ↓ з 0.9% до 0.49% до 2024.", explain:"Якщо людина володіє порожньою нерухомістю і навмисно не здає і не продає її (наприклад, чекає, поки ціна зросте), вона платить підвищений податок. У Ванкувері такий захід реально скоротив кількість порожнього житла майже вдвічі."} },
+  "Отказ от ресурсной экономики": { en:{hint:"Judged premature — would require first solving scarcity and conflict problems.", explain:"There was an idea to build the economy around directly distributing physical resources, without money, but the project's authors decided it's currently too complex and risky, and shelved the idea for later."}, ua:{hint:"Визнано передчасним — потребує вирішення проблем дефіциту і конфліктів.", explain:"Була ідея побудувати економіку навколо прямого розподілу фізичних ресурсів, без грошей, але автори проєкту вирішили, що це поки що надто складно і ризиковано, і відклали цю ідею на майбутнє."} },
+  "Наследство: чьё право реализовано": { en:{hint:"DEPLOYED. What's bequeathed is a protected right to dispose of what you earned; an unclaimed large remainder goes to the Sovereign Fund, not to a random heir.", explain:"If a person decided themselves who to leave their property to, that's respected — they earned it, it's their call. But if no one decided and the inheritance is large, it doesn't automatically go to a distant relative — the system must first search for real heirs, and only if none are found does the remainder go to the shared fund that later pays everyone's dividend. Even years later, an heir who turns up can still claim their share in cash. And for small, ordinary family savings, nothing changes at all — the rule only concerns large, unclaimed remainders."}, ua:{hint:"DEPLOYED. Заповідане — захищене право розпорядитися заробленим; неприйнятий великий залишок — у Sovereign Fund, не випадковому спадкоємцю.", explain:"Якщо людина сама вирішила, кому залишити своє майно, — це поважається: вона заробила, їй і вирішувати. Але якщо ніхто не вирішив і спадщина велика, вона не дістається автоматично далекому родичу — спочатку систему зобов'язана пошукати справжніх спадкоємців, і лише якщо нікого не знайдено, залишок іде у спільний фонд, з якого потім усім платять дивіденд. Навіть через роки спадкоємець, що з'явився, може забрати свою частку грошима. А для дрібних, звичайних сімейних заощаджень взагалі нічого не змінюється — правило тільки про великі, нікому не затребувані залишки."} },
+  "SIFI-модель раскрытия": { en:{hint:"Borrowed from FSB/Basel: a 5-factor systemic-significance assessment, not just debt size.", explain:"Not every company has to disclose everything about itself — only those whose collapse could really bring down the economy for everyone else, like a major bank. It's the same principle financial regulators already use to identify banks that are “too big to fail.”"}, ua:{hint:"Запозичено у FSB/Базеля: 5-факторна оцінка системної значущості, не сума боргу.", explain:"Не будь-яка компанія зобов'язана розкривати все про себе — лише ті, чий крах реально може обвалити економіку для решти, як великий банк. Це той самий принцип, за яким фінансові регулятори вже визначають банки «занадто великі, щоб впасти»."} },
+  "Раскрытие заказчика слежки": { en:{hint:"Disclosure applies to the beneficial initiator, not the formal executor — no hiding behind proxies.", explain:"If you're being watched, it matters to know not just the company that physically installed the cameras or the surveillance software, but who actually ordered it and paid for it — otherwise it's easy to hide behind a shell company."}, ua:{hint:"Розкриттю підлягає бенефіціарний ініціатор, не формальний виконавець — заборона підставних осіб.", explain:"Якщо за тобою стежать, важливо дізнатися не лише компанію, яка фізично встановила камери чи програму стеження, а того, хто насправді це замовив і заплатив за це — інакше легко сховатися за підставною фірмою."} },
+  "Хрупкость аналогов": { en:{hint:"The US Corporate Transparency Act (2020) was gutted via FinCEN in 2025–2026 — protected here by a raised threshold (2/3+90 days).", explain:"The US passed a similar corporate-transparency law in 2020, but over a few years officials gradually weakened its requirements almost to nothing. The lesson: such rules need an especially high threshold to repeal, or they get quietly hollowed out."}, ua:{hint:"US Corporate Transparency Act (2020) вихолощено через FinCEN у 2025–2026 — захищено підвищеним порогом (2/3+90 днів).", explain:"У США ухвалили схожий закон про прозорість компаній 2020 року, але за кілька років чиновники поступово послабили його вимоги майже до нуля. Це урок: такі правила треба захищати особливо високим порогом для скасування, інакше їх непомітно вихолостять."} },
+  "Рейтинговая система": { en:{hint:"Trust / competence / ethics. Suspension thresholds 3.0 / 2.5 / 2.0.", explain:"Every official has a public rating on three scales — how much they're trusted, how competent they are, and how ethically they behave. If the rating drops below a certain line, review or suspension procedures kick in."}, ua:{hint:"Довіра / компетентність / етика. Пороги відсторонення 3.0 / 2.5 / 2.0.", explain:"У кожного чиновника є публічний рейтинг за трьома шкалами — наскільки йому довіряють, наскільки він компетентний і наскільки етично поводиться. Якщо рейтинг падає нижче певної межі, починають діяти процедури перевірки чи відсторонення."} },
+  "Corporate Accountability": { en:{hint:"zkTLS employment verification without employer involvement. Multi-axis business rating.", explain:"Companies get a public rating too — but not just based on the employer's word; a cryptographic technology verifies a person's employment data without letting the employer fake or hide it."}, ua:{hint:"zkTLS-верифікація працевлаштування без участі роботодавця. Багатоосьовий рейтинг бізнесу.", explain:"Компанії теж отримують публічний рейтинг — але не просто зі слів роботодавця, а за допомогою криптографічної технології, яка перевіряє дані про працевлаштування людини, не даючи роботодавцю їх підробити чи приховати."} },
+  "Судебный/арбитражный модуль": { en:{hint:"Two-tier model, benchmark is Kleros. 3 case categories: 24–48h / 5–10 days / no deadline.", explain:"Disputes aren't decided by a single judge appointed by power, but by a panel of randomly selected people — much like a jury, modeled on the existing Kleros online system. Different case types move at different speeds: from a day for urgent ones to weeks for complex ones."}, ua:{hint:"Дворівнева модель, еталон Kleros. 3 категорії справ: 24–48г / 5–10 днів / без строку.", explain:"Спори вирішує не один суддя, призначений владою, а колегія випадково обраних людей — приблизно як присяжні, але за зразком наявної онлайн-системи Kleros. Різні типи справ розглядаються з різною швидкістю: від доби для термінових до тижнів для складних."} },
+  "Conscientious Refusal": { en:{hint:"Standing Order Envelope + coverage by the function of using force, not by the name of the structure.", explain:"If a soldier or police officer is given a clearly illegal order (say, to use force against unarmed civilians), they have an official, legally protected right to refuse to carry it out — and can't be punished for it."}, ua:{hint:"Standing Order Envelope + охоплення за функцією застосування сили, не за назвою структури.", explain:"Якщо військовому чи поліціянту віддають явно незаконний наказ (наприклад, застосувати силу проти беззбройних мирних людей), у нього є офіційне, юридично захищене право відмовитися його виконувати — і за це його не можна покарати."} },
+  "Custody Chain записи приказов": { en:{hint:"Automatic activation + storage outside the chain of command. Lesson from police body cameras.", explain:"All orders to the military and police are automatically recorded and stored somewhere that doesn't answer to the same superiors giving those orders — so the record can't later be erased or faked. The idea is similar to police body cameras, but for orders, not just video."}, ua:{hint:"Автоматична активація + зберігання поза підпорядкованою ієрархією. Урок — тіло-камери поліції.", explain:"Усі накази військовим і поліції автоматично записуються і зберігаються там, де це не підпорядковується тим самим начальникам, що віддають ці накази — щоб запис не можна було потім стерти чи підробити. Ідея схожа на нагрудні камери поліцейських, але для наказів, а не тільки відео."} },
+  "Non-derogable acts": { en:{hint:"Nuremberg Principle IV + the Yamashita standard. An order doesn't remove personal responsibility.", explain:"Some things can't be excused with “I was just following orders” — war crimes, for instance. This principle was established at the Nuremberg trials after World War II: personal responsibility remains even if a superior gave the order."}, ua:{hint:"Нюрнберзький принцип IV + стандарт Ямашити. Наказ не знімає особистої відповідальності.", explain:"Є речі, які не можна виправдати словами «я просто виконував наказ» — наприклад, воєнні злочини. Це принцип, встановлений ще на Нюрнберзькому трибуналі після Другої світової війни: особиста відповідальність лишається, навіть якщо тобі наказав начальник."} },
+  "Local Integration Capacity": { en:{hint:"Norway's dispersal system: an inflow cap of 3–5%/year, raised only by a community Consent protocol.", explain:"When a lot of new people arrive in an area all at once, local residents and infrastructure (schools, hospitals) need time to cope. Norway caps the inflow of new people into one area at 3–5% of the population per year, and the project adopts that same limit as a baseline."}, ua:{hint:"Норвезька dispersal-система: ліміт притоку 3–5%/рік, підвищується лише Consent-протоколом громади.", explain:"Коли в якийсь район приїжджає багато нових людей одразу, місцевим жителям і інфраструктурі (школам, лікарням) потрібен час, щоб впоратися. Норвегія обмежує приплив нових людей в один район 3–5% населення на рік, і проєкт бере цей самий ліміт за основу."} },
+  "Принцип 5.0 — наблюдаемое поведение": { en:{hint:"Ratings and connection dossiers record what a person actually did, not a diagnosis of their character or a prediction of their tendencies.", explain:"It's tempting to select people for power based on a “good intentions” test — but it's exactly people with bad intentions who are best at passing such tests. So the project looks not at what a person thinks or seems to be, but at what they actually did publicly and what came of it — that can't be aced in an interview the way a personality test can."}, ua:{hint:"Рейтинг і досьє зв'язків фіксують те, що людина реально зробила, а не діагностують її особистість чи передбачають схильність.", explain:"Є спокуса відбирати до влади людей за тестом на «добрі наміри» — але саме люди з поганими намірами найкраще вміють такі тести проходити. Тому проєкт дивиться не на те, що людина думає чи ким здається, а на те, що вона реально зробила публічно і що з цього вийшло — це не можна красиво здати на співбесіді, на відміну від тесту особистості."} },
+  "Швейцарская милиционная модель": { en:{hint:"Regional decentralization, civilian control, weapons stored at home.", explain:"Switzerland has almost no professional army in the usual sense — instead, ordinary citizens go through military training and keep weapons at home, ready to defend the country if needed, while living an ordinary civilian life."}, ua:{hint:"Децентралізація по регіонах, цивільний контроль, зброя зберігається вдома.", explain:"У Швейцарії майже немає професійної армії у звичному сенсі — натомість звичайні громадяни проходять військову підготовку і зберігають зброю вдома, готові стати на захист країни за потреби, але живуть звичайним цивільним життям."} },
+  "Контракт вместо призыва": { en:{hint:"A deliberate trade-off: less scale in exchange for staying true to Art. IV.", explain:"People serve in defense not because they were forced to, but because they signed a contract themselves, like for a regular job. This may result in a smaller army, but one made up only of people who genuinely want to be there."}, ua:{hint:"Свідомий компроміс: менша масовість в обмін на вірність Ст. IV.", explain:"Люди служать в обороні не тому, що їх змусили, а тому що самі підписали контракт, як на звичайну роботу. Через це армія може вийти менш чисельною, зате складатися тільки з людей, які реально хочуть там бути."} },
+  "Digitized Chain-of-Command": { en:{hint:"Technically the same protocol as Conscientious Refusal (5.4).", explain:"Military orders go through the same protection system as police orders — if an order is clearly illegal, it can be lawfully refused, and this is recorded digitally in a way that can't be faked after the fact."}, ua:{hint:"Технічно той самий протокол, що Conscientious Refusal (5.4).", explain:"Військові накази проходять через ту саму систему захисту, що й поліцейські — якщо наказ явно незаконний, його можна законно не виконувати, і це фіксується цифровим способом, який не можна підробити заднім числом."} },
+  "Hierarchical агентная архитектура": { en:{hint:"Domain supervisors (not one center), connected via open A2A + MCP.", explain:"Instead of one giant program running everything, there are many separate AI agents, each responsible for its own narrow area (economy, law, and so on), communicating with each other over open, verifiable protocols — meant to make it harder for one AI to gain too much power."}, ua:{hint:"Доменні supervisor'и (не єдиний центр), зв'язок через відкриті A2A + MCP.", explain:"Замість однієї гігантської програми, яка керує всім, використовується багато окремих ІІ-агентів, кожен відповідає за свою вузьку сферу (економіка, право тощо) і спілкується з іншими за відкритими, перевірюваними протоколами — це має ускладнити ситуацію, коли один ІІ отримує забагато влади."} },
+  "Риск алгоритмического сговора": { en:{hint:"Independent RL agents converge on collusion without exchanging information — Assad et al. 2023.", explain:"Researchers found that separate programs that learn to make decisions on their own (like setting prices) sometimes start behaving as if they'd struck a deal — even though literally no one taught them to and they never exchanged messages. The German gasoline market is a real-world example where this was observed."}, ua:{hint:"Незалежні RL-агенти сходяться до змови без обміну інформацією — Assad et al. 2023.", explain:"Науковці виявили, що окремі програми, які самі вчаться приймати рішення (наприклад, встановлювати ціни), іноді починають поводитися так, ніби домовилися між собою — хоча буквально ніхто їх цього не вчив і вони не обмінювалися повідомленнями. Німецький ринок бензину — реальний приклад, де це помітили."} },
+  "InTruth фактчекинг": { en:{hint:"A bridging algorithm modeled on Community Notes — a verdict only with cross-ideological agreement.", explain:"A fact-checking system that marks something “confirmed” only if people with very different views agree on it — not just one side. Similar to the Community Notes feature on X (formerly Twitter)."}, ua:{hint:"Bridging-алгоритм за зразком Community Notes — вердикт лише за крос-ідеологічної згоди.", explain:"Система перевірки фактів, яка ставить позначку «це підтверджено» лише якщо з цим згодні люди з дуже різними поглядами — а не тільки одна сторона. Схоже на функцію Community Notes у соцмережі X (колишній Twitter)."} },
+  "Wisdom of Crowds": { en:{hint:"A backup tool specifically for value deadlocks, not a replacement for the court. Surowiecki, 4 conditions.", explain:"When people's opinions diverge on deep value questions rather than facts, and the usual ways of deciding have hit a wall, you can ask a very wide circle of random people instead of a narrow group of experts. This only works under certain conditions: people have to be independent of each other and hold different viewpoints, not just echo an opinion leader."}, ua:{hint:"Резервний інструмент саме для ціннісних глухих кутів, не заміна суду. Surowiecki, 4 умови.", explain:"Коли думки людей розходяться щодо глибоких ціннісних питань, а не фактів, і звичайні способи вирішення зайшли у глухий кут, — можна запитати думку дуже широкого кола випадкових людей, а не вузької групи експертів. Працює це лише за певних умов: люди мають бути незалежні одне від одного і мати різні точки зору, а не повторювати за лідером думок."} },
+  "Гражданское Polis-приложение": { en:{hint:"vTaiwan precedent: 26+ issues, 80% of conclusions implemented in law.", explain:"An app where people vote “agree / disagree” on short statements from other participants, and a special algorithm shows what opinion groups actually exist in society. A similar tool was genuinely used in Taiwan to help write laws — its conclusions made it into legislation about 80% of the time."}, ua:{hint:"Прецедент vTaiwan: 26+ питань, 80% реалізації висновків у законах.", explain:"Застосунок, де люди голосують «згоден / не згоден» із короткими висловлюваннями інших учасників, а спеціальний алгоритм показує, які групи думок реально існують у суспільстві. На Тайвані схожий інструмент реально використовувався при написанні законів — пропозиції звідти потрапляли в закони приблизно у 80% випадків."} },
+  "Tiered Mandatory Response": { en:{hint:"DEPLOYED. Tier 0–3 cascade: mandatory response → repeated signal → court → recall. Raw votes carry no direct legislative force.", explain:"An already finished and approved mechanism: if people massively disagree with a power-holder's decision, the official is obligated to respond officially, or events escalate step by step to court and then to a recall procedure. At the same time, the vote itself doesn't directly overturn a decision — it just makes ignoring people's opinion impossible without consequences."}, ua:{hint:"DEPLOYED. Каскад Tier 0–3: обов'язкова відповідь → повторний сигнал → суд → відкликання. Без прямої законодавчої сили сирого голосу.", explain:"Уже готовий і схвалений механізм: якщо люди масово не згодні з рішенням влади, чиновник зобов'язаний офіційно на це відповісти, інакше події по наростаючій ідуть до суду, а потім — до процедури його відсторонення. При цьому голосування саме собою не скасовує рішення напряму — воно просто робить ігнорування думки людей неможливим без наслідків."} },
+  "Досье связей чиновника": { en:{hint:"A cryptographic connections graph built on top of the Ukrainian e-declaration model.", explain:"A public database showing an official's ties — business connections, family, old acquaintances — so possible conflicts of interest are visible. Similar to Ukraine's electronic income-declaration system for officials."}, ua:{hint:"Криптографічний граф зв'язків поверх української моделі е-декларування.", explain:"Публічна база даних, яка показує зв'язки чиновника — з ким він пов'язаний у бізнесі, у родині, у старих знайомствах — щоб було видно можливі конфлікти інтересів. Схоже на українську систему електронного декларування доходів чиновників."} },
+  "Бюджетная прозрачность": { en:{hint:"Reference: ProZorro/Dozorro — ~$6B saved since 2017.", explain:"Every government purchase — who bought what, for how much, from whom — is published in an open system anyone can check. Ukraine's ProZorro system has already saved the state around $6 billion this way, simply because corrupt schemes became harder to hide."}, ua:{hint:"Референс ProZorro/Dozorro — ~$6 млрд економії з 2017 року.", explain:"Усі державні закупівлі — хто що купив, за скільки і в кого — публікуються у відкритій системі, яку може перевірити будь-хто. Українська система ProZorro так уже заощадила державі близько 6 мільярдів доларів, просто тому що корупційні схеми стало складніше приховувати."} },
+  "Прозрачность влияния: улица→трибуна": { en:{hint:"DEPLOYED. Disclosure of funding for public “opinion leaders” and labor representation, by reach, not by title.", explain:"Sometimes media figures look like independent voices but are actually coordinated with power or an employer. Instead of guessing based on a person's character, the system looks at checkable traces: matching timing of publications, similar wording, shared money, overlapping audiences. The threshold is high by default — so as not to scare off ordinary small-scale activists, only genuinely notable voices."}, ua:{hint:"DEPLOYED. Розкриття фінансування публічних «лідерів думок» і трудового представництва за охопленням, не за посадою.", explain:"Іноді медійні постаті виглядають як незалежні голоси, а насправді координуються з владою чи роботодавцем. Замість того щоб гадати за особистістю людини, система дивиться на перевірювані сліди: збіг часу публікацій, схожі формулювання, спільні гроші, перетин аудиторії. Поріг високий за замовчуванням — щоб не лякати звичайних невеликих активістів, тільки по-справжньому помітні голоси."} },
+  "Чартерные города как модель форка": { en:{hint:"Próspera / ZEDE — a pilot jurisdiction, not overthrowing a state.", explain:"Instead of trying to change an entire country at once, the idea is to start with one small city or region with its own special rules, as already attempted by the Próspera or ZEDE projects in Honduras."}, ua:{hint:"Próspera / ZEDE — пілотна юрисдикція, не повалення держави.", explain:"Замість того щоб намагатися змінити цілу країну одразу, ідея — почати з одного невеликого міста чи регіону з власними особливими правилами, як уже пробували зробити в проєктах Próspera чи ZEDE в Гондурасі."} },
+  "Урок Próspera": { en:{hint:"An $11B arbitration dispute (2022–2026), the removal of Constitutional Chamber judges.", explain:"The real experimental city of Próspera ran into a serious conflict: Honduran authorities later tried to revoke the territory's special status, and now there's an $11 billion legal dispute underway. The lesson: even a successful pilot project is vulnerable to a shift in political will."}, ua:{hint:"Арбітражний конфлікт на $11 млрд (2022–2026), зміщення суддів Конституційної палати.", explain:"Реальне експериментальне місто Próspera зіткнулося з серйозним конфліктом: влада Гондурасу пізніше спробувала скасувати особливий статус території, і тепер триває судова суперечка на 11 мільярдів доларів. Це урок, що навіть вдалий пілотний проєкт вразливий перед зміною політичної волі."} },
+  "Три поправки для первого форка": { en:{hint:"2–3 jurisdictions in parallel · benefit visible to the local community · arbitration agreed in advance.", explain:"From the Próspera story, three lessons were drawn for the future: try in several countries in parallel from the start (not just one), make the benefit visible to local residents from day one, not only to investors, and agree on independent arbitration in advance, before any disputes arise."}, ua:{hint:"2–3 юрисдикції паралельно · вигода локальній громаді · арбітраж заздалегідь.", explain:"З історії Próspera зробили три висновки на майбутнє: пробувати одразу в кількох країнах паралельно (а не в одній), з самого початку робити вигоду помітною для місцевих жителів, а не тільки для інвесторів, і заздалегідь, до всіх суперечок, домовитися про незалежний арбітраж."} },
+  "Реестр открытых вопросов": { en:{hint:"Section 10 — not a to-do list, but a transparent history: how and when each disputed point was closed, including quorum and the final Core text.", explain:"The project used to honestly display a list of unresolved questions — the exact vote percentage for major decisions, for example. The good news: this list isn't a sign the project is unfinished, but a tool of honesty — anyone can see what was contested, exactly how it was decided, and why. Right now the registry has no open items left — but the habit of keeping such a list remains."}, ua:{hint:"Розділ 10 — не список завдань, а прозора історія: як і коли було закрито кожен спірний пункт, включно з кворумом і фінальним текстом Ядра.", explain:"Раніше в проєкті чесно висів список невирішених питань — наприклад, точний відсоток голосів для важливих рішень. Хороша новина: цей список — не ознака того, що проєкт недороблений, а інструмент чесності: будь-яка людина може побачити, що було спірним, як саме це вирішили і чому. Зараз у реєстрі вже немає відкритих пунктів — але сама звичка вести такий список лишилася."} },
+  "Связность между форками": { en:{hint:"DEPLOYED. Voluntary joint projects, mobility bridges, a forkable commons, portable history without scoring.", explain:"If different versions of OSS ever diverge (fork), that doesn't mean there has to be a wall between them. Forks can voluntarily cooperate — like countries at CERN or on a space station — but none of them can become the “main” one that the others have to adjust to. There's even a separate check every 2 years for whether one fork has quietly started setting the standard for the rest."}, ua:{hint:"DEPLOYED. Добровільні спільні проєкти, мости мобільності, форкований commons, портована історія без оцінки.", explain:"Якщо різні версії ОСС колись розійдуться (форкнуться), це не означає, що між ними має бути стіна. Форки можуть добровільно співпрацювати — як країни в CERN або на космічній станції — але жоден не може стати «головним», під якого підлаштовуються решта. Є навіть окрема перевірка раз на 2 роки: чи не став один форк тихо задавати моду для інших."} },
+};
+
+function mmApplyUi(){
+  var u = MM_UI[MM_LANG] || MM_UI.en;
+  var eye = document.querySelector('header.mm-local .eyebrow');
+  var h1 = document.querySelector('header.mm-local h1');
+  var p = document.querySelector('header.mm-local p');
+  if(eye) eye.textContent = u.eye;
+  if(h1) h1.textContent = u.h1;
+  if(p) p.textContent = u.sub;
+  var bo = document.getElementById('btn-zoom-out');
+  var br = document.getElementById('btn-zoom-reset');
+  var bi = document.getElementById('btn-zoom-in');
+  var be = document.getElementById('btn-expand');
+  var bc = document.getElementById('btn-collapse');
+  if(bo){ bo.title = u.zoomOut; }
+  if(br){ br.title = u.zoomReset; }
+  if(bi){ bi.title = u.zoomIn; }
+  if(be) be.textContent = u.expand;
+  if(bc) bc.textContent = u.collapse;
+  var empty = document.querySelector('#panel-body .empty');
+  if(empty) empty.innerHTML = u.empty;
+}
+
+function mmLocalizeDomains(domains){
+  var pack = MM_DOM[MM_LANG] || MM_DOM.en;
+  var childPack = MM_CHILD[MM_LANG] || {};
+  return domains.map(function(d){
+    var t = pack[d.id] || {};
+    var kids = (d.children || []).map(function(c){
+      // label: explicit translation, else (for ua/ru with no entry) fall back to the RU source label itself —
+      // never fall through to an EN label when MM_LANG is ua/ru, that was the earlier bug.
+      var nl = childPack[c.label] || c.label;
+      var tr = (MM_TR[c.label] && MM_TR[c.label][MM_LANG]) || null;
+      var nh = tr ? tr.hint : c.hint;
+      var ne = tr ? tr.explain : c.explain;
+      return Object.assign({}, c, { label: nl, hint: nh, explain: ne });
+    });
+    return Object.assign({}, d, {
+      label: t.label || d.label,
+      summary: t.summary || d.summary,
+      explain: t.explain || d.explain,
+      src: t.src || d.src,
+      children: kids
+    });
+  });
+}
+
+const DOMAINS_RAW = [
+  {
+    id:'core', code:'01', label:'Философия и Ядро', src:'Разделы 1–2', color:'core',
+    summary:'Конституционное ядро (Ст. I–XI) — люди как источник легитимности, неотменяемые права, признаваемые по факту существования, а не выдаваемые как привилегия.',
+    explain:'Ядро — это правила, которые нельзя нарушать, что бы ни случилось. Представь конституцию, но написанную так, чтобы никто — ни президент, ни полиция, ни даже большинство людей на голосовании — не мог отнять у человека его базовые права. Изменить эти правила можно, только если согласны абсолютно все существующие ответвления проекта, и только после года открытого обсуждения — это специально сделано очень трудным, чтобы Ядро не переписывали под сиюминутную выгоду.',
+    children:[
+      {label:'NAP и самопринадлежность', anchor:'Ст. I', hint:'Каждый безраздельно владеет телом, временем, трудом. Запрет инициации агрессии.', explain:'Никто не имеет права бить, грабить или заставлять тебя что-то делать против воли — ни другой человек, ни государство. Твоё тело и твой труд принадлежат только тебе, и это правило работает одинаково что для обычного гражданина, что для полицейского.', src:'Ст. I'},
+      {label:'Presumption of Freedom', anchor:'Grundgesetz Art.2', hint:'Неопределённость толкуется в пользу свободы. По образцу Grundgesetz Art.2 и 9-й поправки США.', explain:'Если закон написан нечётко и непонятно, что именно он разрешает, а что запрещает, — по умолчанию считается, что разрешено. Это защита от ситуации, когда власть трактует туманные законы в свою пользу, лишь бы что-то запретить.', src:'Ст. III'},
+      {label:'Запрет мобилизации', anchor:'Ст. IV', hint:'Никакой обязательной службы. Оборона — только добровольный контракт.', explain:'Никого нельзя силой забрать в армию. Служить можно только по собственному желанию и по контракту — как обычную работу, а не повинность.', src:'Ст. IV'},
+      {label:'Анти-концентрация власти', anchor:'Ст. VI', hint:'Ни один институт не контролирует одновременно правоприменение, данные и финансы.', explain:'Полиция, службы, которые собирают данные о людях, и те, кто распоряжается деньгами, — это три разных, независимых друг от друга структуры. Если бы всё это было в одних руках, слишком легко было бы злоупотребить властью.', src:'Ст. VI'},
+      {label:'Реципрокная прозрачность', anchor:'Palantir-принцип', hint:'Palantir-принцип: развёртывающий слежку признаёт слежку за собой. Применяется к бенефициарному инициатору.', explain:'Если государство или компания следит за тобой, у тебя есть право знать, кто именно за этим стоит и зачем. Слежка — это не улица с односторонним движением: тот, кто наблюдает за другими, тоже должен быть под наблюдением.', src:'Ст. VII'},
+      {label:'Genesis-согласие', anchor:'soulbound', hint:'Soulbound-подпись. Базовые права — не обусловлены. Голос и роли — обусловлены явным согласием.', explain:'Каждый человек один раз подтверждает своё участие в системе цифровой подписью, которую нельзя передать другому и нельзя подделать. Но базовые права человека не зависят от того, подписал он это или нет — согласие нужно только для того, чтобы голосовать и занимать роли, а не для того, чтобы иметь право на жизнь и свободу.', src:'Ст. VIII'},
+      {label:'Право выхода', anchor:'форк без потерь', hint:'Форк или релокация без утраты личных прав и активов.', explain:'Если тебе не нравится, как всё устроено, ты можешь уйти — создать свою отдельную версию системы (форк) или переехать в другую — и при этом не потеряешь ни свои права, ни своё имущество.', src:'Ст. IX'},
+      {label:'Порядок изменения Ядра', anchor:'консенсус форков', hint:'Единогласие всех активных форков + минимум 1 год публичного обсуждения.', explain:'Базовые правила менять почти невозможно специально: нужно, чтобы согласились абсолютно все существующие независимые ветки проекта, и чтобы обсуждение шло минимум год. Это защита от того, чтобы кто-то в спешке протащил удобные для себя поправки.', src:'Ст. X'},
+      {label:'Равенство перед законом', anchor:'Ст. XI', hint:'Никакая должность не создаёт процедурного иммунитета от правоприменения.', explain:'Президент, судья, полицейский — никто из них не выше закона просто из-за своей должности. Если они нарушают правила, их судят так же, как обычного человека, без специальной неприкосновенности.', src:'Ст. XI'},
+      {label:'Риск: координация как оружие', anchor:'Choi & Bowles 2007', hint:'Choi & Bowles, Science 2007 — коэволюция паройкального альтруизма и войны. Честно не снятый риск.', explain:'Учёные заметили, что способность людей объединяться и жертвовать собой ради своей группы исторически развивалась вместе со способностью воевать против других групп — это как бы две стороны одной эволюционной монеты. Проект честно признаёт: пока непонятно, как сделать так, чтобы сильное чувство «своих» не превращалось в готовность видеть в остальных «чужих».', src:'1.2'},
+      {label:'Явка и экстренный путь', anchor:'без жёсткого кворума', hint:'DEPLOYED. Прозрачность явки вместо кворума + 72-часовой путь для срочных технических фиксов с автоистечением через 90 дней.', explain:'Раньше было неясно: если мало людей проголосовало, а нужные 2/3 набрались среди пришедших — это законно или нет? Решение — не вводить жёсткое «минимальное число голосующих» (это дало бы противникам решения возможность просто не приходить и тем самым его сорвать), а всегда честно публиковать явку рядом с результатом. И отдельно: для срочных технических поломок (не для важных ценностных решений) есть быстрый путь в 72 часа вместо обычных 90 дней — но он автоматически перестаёт действовать, если решение не подтвердили по-настоящему.', src:'2.4.2'}
+    ]
+  },
+  {
+    id:'econ', code:'02', label:'Экономика / Геолибертарианство', src:'Раздел 3', color:'econ',
+    summary:'Единственный источник дохода системы — рента с общих ресурсов (LVT). Синтез NAP и джорджизма, без ресурсно-ориентированной экономики.',
+    explain:'Вместо налогов на зарплату, покупки или прибыль бизнеса система берёт плату только за землю — точнее, за саму землю, а не за дом или завод, который на ней построен. Идея в том, что землю никто не создавал — она досталась всем от природы, и поэтому справедливо, чтобы каждый, кто ей пользуется, платил остальным гражданам небольшую ренту. Собранные деньги идут в общий фонд и возвращаются людям в виде дивиденда — как в Аляске, где каждый житель ежегодно получает выплату от нефтяных доходов штата.',
+    children:[
+      {label:'Land Value Tax', anchor:'Эстония 0.1–2%', hint:'Коридор ставки 0.1–2.0%, эталон — Эстония (единственная страна с чистым джорджизмом на практике).', explain:'Платишь небольшой процент от стоимости именно земли (не дома на ней) каждый год — от 0.1% до 2%. Эстония — единственная страна, которая по-настоящему пробовала жить по такому принципу, и это стало ориентиром.', src:'3.4'},
+      {label:'Оценка земли', anchor:'CAMA', hint:'Метод остатка + CAMA-структура + оракул на гедонической регрессии по реестру сделок.', explain:'Чтобы понять, сколько стоит земля отдельно от дома, используют математические модели, которые сравнивают похожие участки и реальные цены сделок в округе — примерно так же, как это делают агентства по недвижимости, но по строгой формуле, а не на глазок.', src:'3.3'},
+      {label:'Защита от бездомности', anchor:'3 линии защиты', hint:'Три линии: зачёт Dividend → deferral с лиеном (до 80% equity) → экстренный бридж-кредит.', explain:'Если человеку нечем платить земельный налог, есть три уровня подстраховки: сначала налог просто вычитают из его же дивиденда, потом можно отложить оплату под залог будущей стоимости дома, и только в крайнем случае — экстренный кредит. Цель — чтобы никто не потерял жильё из-за этого налога.', src:'3.6'},
+      {label:'Citizen’s Dividend', anchor:'Alaska PFD', hint:'Не обусловлен Genesis-согласием, начисляется и детям. Аналог — Alaska PFD.', explain:'Каждый человек — включая детей — регулярно получает часть денег, собранных с земельного налога, просто за то, что он существует, а не за какую-то работу. Похоже на то, как в Аляске каждый житель штата получает ежегодную выплату от доходов с нефти.', src:'2.5 / 3.8'},
+      {label:'Sovereign Fund', anchor:'GPFG, Норвегия', hint:'Четырёхуровневая структура по образцу GPFG (Норвегия): Стратег/Оператор/Ethics-орган/Совет.', explain:'Часть собранных денег не тратится сразу, а вкладывается в долгосрочный общий фонд — как норвежский нефтяной фонд, один из крупнейших в мире, — чтобы деньги работали на будущие поколения, а не заканчивались за один год.', src:'3.9'},
+      {label:'Надбавка за простой', anchor:'Ванкувер −67%', hint:'+2–3 п.п. за простой 6+ мес. Ванкувер: вакантность ↓ с 0.9% до 0.49% к 2024.', explain:'Если человек владеет пустующей недвижимостью и специально не сдаёт и не продаёт её (например, ждёт, чтобы цена выросла), он платит повышенный налог. В Ванкувере такая мера реально сократила количество пустующего жилья почти вдвое.', src:'3.5'},
+      {label:'Отказ от ресурсной экономики', anchor:'преждевременно', hint:'Признана преждевременной — требует решения проблем дефицита и конфликтов.', explain:'Была идея построить экономику вокруг распределения физических ресурсов напрямую, без денег, но авторы проекта решили, что это пока слишком сложно и рискованно, и отложили эту идею на будущее.', src:'1 / 3.1'},
+      {label:'Наследство: чьё право реализовано', anchor:'Paine 1797', hint:'DEPLOYED. Завещанное — защищённое право распорядиться заработанным; непринятый крупный остаток — в Sovereign Fund, не случайному наследнику.', explain:'Если человек сам решил, кому оставить своё имущество — это уважается: он заработал, ему и решать. Но если никто не решил и наследство большое, оно не достаётся автоматически дальнему родственнику — сначала систему обязана поискать настоящих наследников, и только если никто не находится, остаток идёт в общий фонд, из которого потом всем платят дивиденд. Даже спустя годы объявившийся наследник может забрать свою долю деньгами. А для мелких, обычных семейных сбережений вообще ничего не меняется — правило только про крупные, никем не востребованные остатки.', src:'2.8 / 3.13'}
+    ]
+  },
+  {
+    id:'trans', code:'03', label:'Прозрачность / Leverage', src:'Раздел 4', color:'trans',
+    summary:'Реципрокная прозрачность, применённая к системному финансовому рычагу и к заказчикам слежки.',
+    explain:'Если у какой-то организации или человека настолько много влияния, что их проблемы могут обрушить всю систему (как крупный банк, из-за которого может начаться финансовый кризис), — общество имеет право знать об этом заранее, а не только когда всё уже рухнуло. То же самое со слежкой: если кто-то заказывает наблюдение за гражданами, общество должно знать, кто именно это заказал, а не только кто формально это исполнил.',
+    children:[
+      {label:'SIFI-модель раскрытия', anchor:'FSB / Базель', hint:'Заимствовано у FSB/Базеля: 5-факторная оценка системной значимости, а не сумма долга.', explain:'Не любая компания обязана раскрывать всё о себе — только те, чей крах реально может обрушить экономику для всех остальных, как крупный банк. Это тот же принцип, по которому финансовые регуляторы уже определяют «слишком большие, чтобы упасть» банки.', src:'4'},
+      {label:'Раскрытие заказчика слежки', anchor:'бенефициар, не исполнитель', hint:'Раскрытию подлежит бенефициарный инициатор, а не формальный исполнитель — запрет подставных лиц.', explain:'Если за тобой следят, важно узнать не только компанию, которая физически установила камеры или программу слежки, а того, кто на самом деле это заказал и заплатил за это — иначе легко спрятаться за подставной фирмой.', src:'4.1'},
+      {label:'Хрупкость аналогов', anchor:'US CTA 2020', hint:'US Corporate Transparency Act (2020) выхолощен через FinCEN в 2025–2026 — защищено повышенным порогом (2/3+90 дней).', explain:'В США приняли похожий закон о прозрачности компаний в 2020 году, но за несколько лет чиновники постепенно ослабили его требования почти до нуля. Это урок: такие правила нужно защищать особо высоким порогом для отмены, иначе их незаметно выхолостят.', src:'4.1'}
+    ]
+  },
+  {
+    id:'inst', code:'04', label:'Институты подотчётности', src:'Раздел 5', color:'inst',
+    summary:'Рейтинг, корпоративная подотчётность, судебный модуль, защита отказавшихся от незаконного приказа.',
+    explain:'Это про то, как заставить власть отвечать за свои поступки, даже если нет привычных выборов или прессы. Чиновники и компании получают публичный рейтинг за честность и качество работы, спорные дела решает независимый суд по жребию (как присяжные), а военный или полицейский, которому приказали сделать что-то незаконное, юридически защищён, если он откажется выполнять такой приказ.',
+    children:[
+      {label:'Рейтинговая система', anchor:'3.0 / 2.5 / 2.0', hint:'Доверие / компетентность / этика. Пороги отстранения 3.0 / 2.5 / 2.0.', explain:'У каждого чиновника есть публичный рейтинг по трём шкалам — насколько ему доверяют, насколько он компетентен и насколько этично себя ведёт. Если рейтинг падает ниже определённой черты, начинают действовать процедуры проверки или отстранения.', src:'5.1'},
+      {label:'Corporate Accountability', anchor:'zkTLS', hint:'zkTLS-верификация трудоустройства без участия работодателя. Многоосевой рейтинг бизнеса.', explain:'Компании тоже получают публичный рейтинг — но не просто со слов работодателя, а с помощью криптографической технологии, которая проверяет данные о трудоустройстве человека, не давая работодателю их подделать или скрыть.', src:'5.2'},
+      {label:'Судебный/арбитражный модуль', anchor:'эталон Kleros', hint:'Двухуровневая модель, эталон Kleros. 3 категории дел: 24–48ч / 5–10 дней / без срока.', explain:'Споры решает не один судья, назначенный властью, а коллегия случайно выбранных людей — примерно как присяжные, только по образцу существующей онлайн-системы Kleros. Разные типы дел рассматриваются с разной скоростью: от суток для срочных до недель для сложных.', src:'5.3'},
+      {label:'Conscientious Refusal', anchor:'Standing Order Envelope', hint:'Standing Order Envelope + охват по функции применения силы, не по названию структуры.', explain:'Если военному или полицейскому отдают явно незаконный приказ (например, применить силу против безоружных мирных людей), у него есть официальное, юридически защищённое право отказаться его выполнять — и его за это нельзя наказать.', src:'5.4'},
+      {label:'Custody Chain записи приказов', anchor:'body-камеры', hint:'Автоматическая активация + хранение вне подчинённой иерархии. Урок — тело-камеры полиции.', explain:'Все приказы военным и полиции автоматически записываются и хранятся в месте, которое не подчиняется тем же начальникам, что отдают эти приказы — чтобы запись нельзя было потом стереть или подделать. Идея похожа на нательные камеры полицейских, но для приказов, а не только видео.', src:'5.4.1.1'},
+      {label:'Non-derogable acts', anchor:'Нюрнберг, принцип IV', hint:'Нюрнбергский принцип IV + стандарт Ямашита. Приказ не снимает личной ответственности.', explain:'Есть вещи, которые нельзя оправдать словами «я просто выполнял приказ» — например, военные преступления. Это принцип, установленный ещё на Нюрнбергском трибунале после Второй мировой войны: личная ответственность остаётся, даже если тебе приказал начальник.', src:'5.4.2'},
+      {label:'Local Integration Capacity', anchor:'Норвегия, 3–5%/год', hint:'Норвежская dispersal-система: лимит притока 3–5%/год, повышается только Consent-протоколом общины.', explain:'Когда в какой-то район приезжает много новых людей сразу, местным жителям и инфраструктуре (школам, больницам) нужно время, чтобы справиться. Норвегия ограничивает приток новых людей в один район 3–5% населения в год, и проект берёт этот же лимит за основу.', src:'5.5'},
+      {label:'Принцип 5.0 — наблюдаемое поведение', anchor:'не диагноз, а трек', hint:'Рейтинг и досье связей фиксируют то, что человек реально сделал, а не диагностируют его личность или предсказывают склонность.', explain:'Есть соблазн отбирать во власть людей по тесту на «хорошие намерения» — но именно люди с плохими намерениями лучше всего умеют такие тесты проходить. Поэтому проект смотрит не на то, что человек думает или кем кажется, а на то, что он реально сделал публично и что из этого вышло — это нельзя красиво сдать на собеседовании, в отличие от теста личности.', src:'5.0'}
+    ]
+  },
+  {
+    id:'def', code:'05', label:'Оборона', src:'Раздел 6', color:'def',
+    summary:'Боеготовность без принудительной мобилизации — организационная архитектура милиции без призыва.',
+    explain:'Вместо армии, куда всех забирают против воли, — оборона строится на добровольцах, которые сами решили служить, плюс на модели вроде швейцарской, где оружие хранится дома у обычных людей, а не только в казармах. Это компромисс: армия получится не такой многочисленной, зато в ней не будет людей, которые не хотели там оказаться.',
+    children:[
+      {label:'Швейцарская милиционная модель', anchor:'оружие дома', hint:'Децентрализация по регионам, гражданский контроль, оружие хранится дома.', explain:'В Швейцарии почти нет профессиональной армии в привычном смысле — вместо этого обычные граждане проходят военную подготовку и хранят оружие у себя дома, готовые встать на защиту страны при необходимости, но живут обычной гражданской жизнью.', src:'6'},
+      {label:'Контракт вместо призыва', anchor:'осознанный компромисс', hint:'Осознанный компромисс: меньшая массовость в обмен на верность Ст. IV.', explain:'Люди служат в обороне не потому, что их заставили, а потому что сами подписали контракт, как на обычную работу. Из-за этого армия может получиться менее многочисленной, зато состоящей только из людей, которые реально хотят там быть.', src:'6'},
+      {label:'Digitized Chain-of-Command', anchor:'= протокол 5.4', hint:'Технически тот же протокол, что Conscientious Refusal (5.4).', explain:'Военные приказы проходят через ту же систему защиты, что и полицейские — если приказ явно незаконный, его можно законно не выполнять, и это фиксируется цифровым способом, который нельзя подделать задним числом.', src:'6'}
+    ]
+  },
+  {
+    id:'tech', code:'06', label:'Технологии / Агенты', src:'Раздел 7', color:'tech',
+    summary:'Hierarchical агентная архитектура, фактчекинг, гражданское Polis-приложение — зеркалят институциональное разделение власти.',
+    explain:'ИИ-агенты и цифровые инструменты помогают системе работать — например, проверяют факты, замечают, когда чиновник говорит одно, а люди думают другое, следят за прозрачностью бюджета. Но управление устроено не одним всемогущим ИИ, а множеством отдельных программ-специалистов, у каждой — своя узкая задача, чтобы никто не мог получить контроль над всем сразу.',
+    children:[
+      {label:'Hierarchical агентная архитектура', anchor:'A2A + MCP', hint:'Доменные supervisor’ы (не единый центр), связь через открытые A2A + MCP.', explain:'Вместо одной гигантской программы, которая управляет всем, используется много отдельных ИИ-агентов, каждый отвечает за свою узкую область (экономика, право и так далее) и общается с другими по открытым, проверяемым протоколам — это должно затруднить ситуацию, когда один ИИ получает слишком много власти.', src:'7.1'},
+      {label:'Риск алгоритмического сговора', anchor:'Assad et al. 2023', hint:'Независимые RL-агенты сходятся к сговору без обмена информацией — Assad et al. 2023.', explain:'Учёные обнаружили, что отдельные программы, которые сами учатся принимать решения (например, назначать цены), иногда начинают вести себя так, будто договорились между собой — хотя буквально никто их этому не учил и они не обменивались сообщениями. Немецкий рынок бензина — реальный пример, где это заметили.', src:'7.1.1'},
+      {label:'InTruth фактчекинг', anchor:'Community Notes', hint:'Bridging-алгоритм по образцу Community Notes — вердикт только при кросс-идеологическом согласии.', explain:'Система проверки фактов, которая ставит отметку «это подтверждено» только если с этим согласны люди с очень разными взглядами — а не только одна сторона. Похоже на функцию Community Notes в соцсети X (бывший Twitter).', src:'7.2'},
+      {label:'Wisdom of Crowds', anchor:'Surowiecki', hint:'Резервный инструмент именно для ценностных тупиков, не замена суда. Surowiecki, 4 условия.', explain:'Когда мнения людей расходятся по глубоким ценностным вопросам, а не по фактам, и обычные способы решения зашли в тупик, — можно спросить мнение очень широкого круга случайных людей, а не узкой группы экспертов. Работает это только при определённых условиях: люди должны быть независимы друг от друга и иметь разные точки зрения, а не повторять за лидером мнений.', src:'7.3'},
+      {label:'Гражданское Polis-приложение', anchor:'vTaiwan', hint:'Прецедент vTaiwan: 26+ вопросов, 80% реализации выводов в законах.', explain:'Приложение, где люди голосуют «согласен / не согласен» с короткими высказываниями других участников, а специальный алгоритм показывает, какие группы мнений реально существуют в обществе. На Тайване похожий инструмент реально использовался при написании законов — предложения оттуда попадали в законы примерно в 80% случаев.', src:'7.4'},
+      {label:'Tiered Mandatory Response', anchor:'DEPLOYED', hint:'DEPLOYED. Каскад Tier 0–3: обязательный ответ → повторный сигнал → суд → отзыв. Без прямой законодательной силы сырого голоса.', explain:'Уже готовый и одобренный механизм: если люди массово не согласны с решением власти, чиновник обязан на это официально ответить, иначе события по нарастающей идут в суд, а затем — к процедуре его отстранения. При этом голосование само по себе не отменяет решение напрямую — оно просто делает игнорирование мнения людей невозможным без последствий.', src:'7.4.2'},
+      {label:'Досье связей чиновника', anchor:'e-декларирование UA', hint:'Криптографический граф связей поверх украинской модели e-декларирования.', explain:'Публичная база данных, которая показывает связи чиновника — с кем он связан в бизнесе, в семье, в старых знакомствах — чтобы было видно возможные конфликты интересов. Похоже на украинскую систему электронного декларирования доходов чиновников.', src:'7.4.3'},
+      {label:'Бюджетная прозрачность', anchor:'ProZorro −$6 млрд', hint:'Референс ProZorro/Dozorro — ~$6 млрд экономии с 2017 года.', explain:'Все государственные закупки — кто что купил, за сколько и у кого — публикуются в открытой системе, которую может проверить любой человек. Украинская система ProZorro так уже сэкономила государству около 6 миллиардов долларов, просто потому что коррупционные схемы стало сложнее скрывать.', src:'7.4.5'},
+      {label:'Прозрачность влияния: улица→трибуна', anchor:'4-индикаторный скор', hint:'DEPLOYED. Раскрытие финансирования публичных «лидеров мнений» и трудового представительства по охвату, не по должности.', explain:'Иногда медийные фигуры выглядят как независимые голоса, а на деле координируются с властью или работодателем. Вместо того чтобы гадать по личности человека, система смотрит на проверяемые следы: совпадение времени публикаций, похожие формулировки, общие деньги, пересечение аудитории. Порог высокий по умолчанию — чтобы не пугать обычных небольших активистов, только по-настоящему заметные голоса.', src:'7.4.6'}
+    ]
+  },
+  {
+    id:'intl', code:'07', label:'Международное + Открытые вопросы', src:'Разделы 8, 10', color:'intl',
+    summary:'Модель первого форка через чартерные города и честный реестр того, что ещё не решено.',
+    explain:'Проект не пытается захватить существующие страны — вместо этого предлагается начать с одного небольшого места (по образцу существующих экспериментальных городов вроде Próspera в Гондурасе), доказать, что система работает, и только потом расширяться. При этом честно признаётся, что многое ещё не решено — например, точные правила для голосования — специально оставлено открытым, а не выдумано заранее.',
+    children:[
+      {label:'Чартерные города как модель форка', anchor:'Próspera / ZEDE', hint:'Próspera / ZEDE — пилотная юрисдикция, не свержение государства.', explain:'Вместо того чтобы пытаться поменять целую страну сразу, идея — начать с одного небольшого города или региона со своими особыми правилами, как уже пробовали сделать в проектах Próspera или ZEDE в Гондурасе.', src:'8'},
+      {label:'Урок Próspera', anchor:'$11 млрд арбитраж', hint:'Арбитражный конфликт на $11 млрд (2022–2026), смещение судей Конституционной палаты.', explain:'Реальный экспериментальный город Próspera столкнулся с серьёзным конфликтом: власти Гондураса позже попытались отменить особый статус территории, и теперь идёт судебный спор на 11 миллиардов долларов. Это урок, что даже удачный пилотный проект уязвим перед сменой политической воли.', src:'8'},
+      {label:'Три поправки для первого форка', anchor:'мультиюрисдикция', hint:'2–3 юрисдикции параллельно · выгода локальному сообществу · арбитраж заранее.', explain:'Из истории Próspera сделали три вывода на будущее: пробовать сразу в нескольких странах параллельно (а не в одной), с самого начала делать выгоду заметной для местных жителей, а не только для инвесторов, и заранее, до всех споров, договориться о независимом арбитраже.', src:'8'},
+      {label:'Реестр открытых вопросов', anchor:'история решений', hint:'Раздел 10 — не список задач, а прозрачная история: как и когда был закрыт каждый спорный пункт, включая кворум и финальный текст Ядра.', explain:'Раньше в проекте честно висел список нерешённых вопросов — например, точный процент голосов для важных решений. Хорошая новость: этот список — не признак того, что проект недоделан, а инструмент честности: любой человек может увидеть, что было спорным, как именно это решили и почему. Сейчас в реестре уже нет открытых пунктов — но сама привычка вести такой список осталась.', src:'10'},
+      {label:'Связность между форками', anchor:'CERN/МКС-модель', hint:'DEPLOYED. Добровольные совместные проекты, мосты мобильности, форкаемый commons, портируемая история без оценки.', explain:'Если разные версии ОСО когда-нибудь разойдутся (форкнутся), это не значит, что между ними должна быть стена. Форки могут добровольно сотрудничать — как страны в CERN или на космической станции — но ни один не может стать «главным», под которого остальные подстраиваются. Есть даже отдельная проверка раз в 2 года: не стал ли один форк тихо задавать моду для остальных.', src:'8.1'}
+    ]
+  }
+];
+
+const DOMAINS = mmLocalizeDomains(DOMAINS_RAW);
+mmApplyUi();
+
+// Re-paint map when site theme toggles (data-theme on <html>)
+(function(){
+  var obs = new MutationObserver(function(){ if(typeof render==='function') try{render();}catch(e){} });
+  obs.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+})();
+
+const canvas = document.getElementById('canvas');
+const wrap = document.getElementById('canvas-wrap');
+const zoomLayer = document.getElementById('zoom-layer');
+const panel = document.getElementById('panel');
+const panelBody = document.getElementById('panel-body');
+
+// --- Pan & zoom for the whole canvas (bounded, not infinite) ---
+const MIN_SCALE = 0.55, MAX_SCALE = 1.25;
+const PAN_LIMIT_X = 420, PAN_LIMIT_Y = 340;
+const view = { x: 0, y: 0, scale: 1 };
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function applyView(){
+  zoomLayer.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
+}
+function setScale(s){
+  view.scale = clamp(s, MIN_SCALE, MAX_SCALE);
+  view.x = clamp(view.x, -PAN_LIMIT_X, PAN_LIMIT_X);
+  view.y = clamp(view.y, -PAN_LIMIT_Y, PAN_LIMIT_Y);
+  applyView();
+}
+
+wrap.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  setScale(view.scale - e.deltaY * 0.0012);
+}, { passive:false });
+
+let isPanning = false, panStart = {x:0,y:0}, viewStartAt = {x:0,y:0};
+wrap.addEventListener('pointerdown', (e)=>{
+  if(e.target.closest('.node')) return; // node dragging handles its own pointerdown
+  isPanning = true;
+  panStart = { x:e.clientX, y:e.clientY };
+  viewStartAt = { x:view.x, y:view.y };
+  wrap.classList.add('panning');
+  wrap.setPointerCapture(e.pointerId);
+});
+wrap.addEventListener('pointermove', (e)=>{
+  if(!isPanning) return;
+  view.x = clamp(viewStartAt.x + (e.clientX - panStart.x), -PAN_LIMIT_X, PAN_LIMIT_X);
+  view.y = clamp(viewStartAt.y + (e.clientY - panStart.y), -PAN_LIMIT_Y, PAN_LIMIT_Y);
+  applyView();
+});
+wrap.addEventListener('pointerup', (e)=>{
+  isPanning = false;
+  wrap.classList.remove('panning');
+  wrap.releasePointerCapture(e.pointerId);
+});
+
+let W = 0, H = 0, CX = 0, CY = 0;
+const R1 = 300; // domain ring radius
+const R2 = 260; // extra radius for children beyond domain node
+const dragOffsets = {}; // key -> {dx,dy}, persists across re-renders
+
+function isMobile(){ return window.innerWidth <= 720; }
+
+function measure(){
+  if (typeof window.syncHeaderHeight === 'function') window.syncHeaderHeight();
+  const root = document.getElementById('app') || document.body;
+  W = root.clientWidth || window.innerWidth;
+  H = root.clientHeight || window.innerHeight;
+  CX = W / 2;
+  CY = H / 2;
+}
+
+function angleFor(i, n){ return (i * (360/n)) - 90; } // start at top
+
+function pt(cx, cy, r, angDeg){
+  const a = angDeg * Math.PI/180;
+  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+}
+
+function el(tag, cls, html){
+  const e = document.createElement('div');
+  if(cls) e.className = cls;
+  if(html !== undefined) e.innerHTML = html;
+  return e;
+}
+
+// Makes `nodeEl` draggable. Updates its own position live and (if given) the
+// endpoint of `line` live. Drag offsets persist in dragOffsets so the next
+// full render() keeps the manually-adjusted position. Sets nodeEl._justDragged
+// briefly after a real drag so the subsequent click doesn't also toggle/open.
+function attachDrag(nodeEl, key, baseX, baseY, line){
+  nodeEl.dataset.baseX = baseX; nodeEl.dataset.baseY = baseY;
+  nodeEl.addEventListener('pointerdown', (e)=>{
+    if(e.button !== undefined && e.button !== 0) return;
+    e.stopPropagation();
+    nodeEl.setPointerCapture(e.pointerId);
+    const startX = e.clientX, startY = e.clientY;
+    const startOff = dragOffsets[key] || {dx:0,dy:0};
+    let moved = false;
+    nodeEl.classList.add('dragging');
+
+    function onMove(ev){
+      const ddx = ev.clientX - startX, ddy = ev.clientY - startY;
+      if(Math.abs(ddx) > 4 || Math.abs(ddy) > 4) moved = true;
+      const dx = startOff.dx + ddx, dy = startOff.dy + ddy;
+      dragOffsets[key] = {dx, dy};
+      const nx = baseX + dx, ny = baseY + dy;
+      nodeEl.style.left = nx+'px'; nodeEl.style.top = ny+'px';
+      if(line){ line.setAttribute('x2', nx); line.setAttribute('y2', ny); }
+    }
+    function onUp(ev){
+      nodeEl.releasePointerCapture(ev.pointerId);
+      nodeEl.classList.remove('dragging');
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if(moved){
+        nodeEl._justDragged = true;
+        setTimeout(()=>{ nodeEl._justDragged = false; }, 0);
+      }
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+
+function svgLine(x1,y1,x2,y2, colorVar, opacity, w){
+  const ns = 'http://www.w3.org/2000/svg';
+  const line = document.createElementNS(ns,'line');
+  line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+  line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+  line.setAttribute('class','conn');
+  line.setAttribute('stroke', colorVar);
+  line.setAttribute('stroke-width', w || 1.4);
+  line.setAttribute('stroke-opacity', opacity);
+  return line;
+}
+
+function ring(cx, cy, r){
+  const ns='http://www.w3.org/2000/svg';
+  const c = document.createElementNS(ns,'circle');
+  c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r',r);
+  c.setAttribute('fill','none');
+  c.setAttribute('stroke','rgba(255,255,255,0.045)');
+  c.setAttribute('stroke-dasharray','2 6');
+  c.setAttribute('stroke-width','1');
+  return c;
+}
+
+function colorOf(id){ return getComputedStyle(document.documentElement).getPropertyValue('--c-'+id).trim(); }
+
+function showDetail(node, isDomain, domainColorId){
+  const c = colorOf(domainColorId);
+  const u = MM_UI[MM_LANG] || MM_UI.en;
+  document.documentElement.style.setProperty('--dc-active', c);
+  panelBody.innerHTML = `
+    <div class="p-eyebrow mono" style="border-color:${c}; color:${c};">${isDomain ? u.domainTag : u.subtopicTag}</div>
+    <h2>${node.label}</h2>
+    <div class="p-hint">${isDomain ? node.summary : node.hint}</div>
+    <div class="p-explain"><div class="p-explain-label mono">${u.plainWords}</div>${node.explain}</div>
+    <div class="p-src"><span>${u.source}</span><b class="mono">${node.src}</b></div>
+  `;
+  panel.classList.add('open');
+}
+
+function closePanel(){ panel.classList.remove('open'); }
+document.getElementById('panel-close').onclick = closePanel;
+
+function render(){
+  measure();
+  canvas.innerHTML = '';
+  const newSvg = document.getElementById('lines');
+  newSvg.innerHTML = '';
+  newSvg.setAttribute('width', W);
+  newSvg.setAttribute('height', H);
+
+  const rr1 = isMobile() ? R1*0.68 : R1;
+  const rr2 = isMobile() ? R2*0.62 : R2;
+
+  newSvg.appendChild(ring(CX,CY,rr1));
+
+  // hub
+  const _u = MM_UI[MM_LANG]||MM_UI.en;
+  const _brand = (MM_LANG==='ua'?'ОСС':(MM_LANG==='ru'?'ОСО':'OSS'));
+  const hub = el('div','node hub',`<div class="t1">${_brand}</div><div class="t2 mono">${_u.hub}</div>`);
+  hub.style.left = CX+'px'; hub.style.top = CY+'px';
+  canvas.appendChild(hub);
+
+  const n = DOMAINS.length;
+  DOMAINS.forEach((d,i)=>{
+    const ang = angleFor(i,n);
+    const base = pt(CX,CY,rr1,ang);
+    const dKey = 'd:'+d.id;
+    const dOff = dragOffsets[dKey] || {dx:0,dy:0};
+    const p = { x: base.x + dOff.dx, y: base.y + dOff.dy };
+    const color = colorOf(d.color);
+
+    const dLine = svgLine(CX,CY,p.x,p.y,color,0.55,1.6);
+    newSvg.appendChild(dLine);
+
+    const dEl = el('div','node domain');
+    dEl.style.setProperty('--dc', color);
+    dEl.style.left = p.x+'px'; dEl.style.top = p.y+'px';
+    dEl.innerHTML = `<span class="code mono">${d.code}</span>
+      <div><div class="label">${d.label}</div><div class="src mono">${d.src}</div></div>
+      <span class="chev">▸</span>`;
+    dEl.dataset.id = d.id;
+    canvas.appendChild(dEl);
+    attachDrag(dEl, dKey, base.x, base.y, dLine);
+
+    dEl.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(dEl._justDragged) return;
+      d._open = !d._open;
+      showDetail(d, true, d.color);
+      render();
+    });
+
+    if(d._open){
+      dEl.classList.add('expanded');
+      newSvg.appendChild(ring(CX,CY,rr1+rr2*0.55));
+      const m = d.children.length;
+      const spread = Math.min(130, 22*m); // total angular spread for children — wide enough to avoid overlap
+      d.children.forEach((c,j)=>{
+        const coff = m===1 ? 0 : (-spread/2) + (spread/(m-1))*j;
+        const cBase = pt(CX,CY, rr1+rr2, ang+coff);
+        const cKey = 'l:'+d.id+':'+j;
+        const cOff = dragOffsets[cKey] || {dx:0,dy:0};
+        const cp = { x: cBase.x + cOff.dx, y: cBase.y + cOff.dy };
+
+        const cLine = svgLine(p.x,p.y,cp.x,cp.y,color,0.35,1.1);
+        newSvg.appendChild(cLine);
+
+        const cEl = el('div','node leaf');
+        cEl.style.setProperty('--dc', color);
+        cEl.style.setProperty('--dc-dim', color+'55');
+        cEl.style.left = cp.x+'px'; cEl.style.top = cp.y+'px';
+        cEl.innerHTML = `<div class="label">${c.label}</div><div class="anchor mono">${c.anchor}</div>`;
+        canvas.appendChild(cEl);
+        attachDrag(cEl, cKey, cBase.x, cBase.y, cLine);
+
+        cEl.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          if(cEl._justDragged) return;
+          document.querySelectorAll('.leaf.active').forEach(x=>x.classList.remove('active'));
+          cEl.classList.add('active');
+          showDetail(c, false, d.color);
+        });
+      });
+    }
+  });
+}
+
+// Legend
+const legend = document.getElementById('legend');
+DOMAINS.forEach(d=>{
+  const row = el('div','row');
+  row.innerHTML = `<span class="dot" style="background:var(--c-${d.color})"></span><span>${d.code} · ${d.label}</span>`;
+  legend.appendChild(row);
+});
+
+document.getElementById('btn-expand').onclick = ()=>{ DOMAINS.forEach(d=>d._open=true); render(); };
+document.getElementById('btn-collapse').onclick = ()=>{ DOMAINS.forEach(d=>d._open=false); render(); closePanel(); };
+document.getElementById('btn-zoom-in').onclick = ()=> setScale(view.scale + 0.15);
+document.getElementById('btn-zoom-out').onclick = ()=> setScale(view.scale - 0.15);
+document.getElementById('btn-zoom-reset').onclick = ()=>{ view.x=0; view.y=0; view.scale=1; applyView(); };
+document.getElementById('app').addEventListener('click', (e)=>{
+  if(['app','bg-grid','canvas-wrap','zoom-layer','canvas'].includes(e.target.id)){ closePanel(); }
+});
+
+window.addEventListener('resize', render);
+render();
+applyView();
+</script>
+</body>
+</html>

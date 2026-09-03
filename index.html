@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSS Public Prototype — Operating System of Society</title>
+<meta name="description" content="OSS Public Prototype: constitutional core, LVT economy, Polis civic layer, court MVP, social rating for companies and public figures. EN/UA/RU.">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.hero{padding:3.5rem 0 2.5rem;border-bottom:1px solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:2.5rem;align-items:center}
+@media(max-width:820px){.hero-grid{grid-template-columns:1fr}}
+.hero h1{font-size:clamp(30px,4.5vw,48px);max-width:16ch}
+.domains{position:relative;aspect-ratio:1;max-width:300px;margin:0 auto}
+.dcircle{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:.45rem;font-size:11px;line-height:1.25}
+.d-enf{width:56%;height:56%;top:2%;left:22%;background:var(--no-w);border:1.5px solid var(--no)}
+.d-data{width:56%;height:56%;bottom:2%;left:0;background:var(--seal-w);border:1.5px solid var(--seal)}
+.d-fin{width:56%;height:56%;bottom:2%;right:0;background:var(--yes-w);border:1.5px solid var(--yes)}
+.dcircle b{font-family:var(--serif);font-size:12.5px;display:block;margin-bottom:.1rem}
+.dcaption{text-align:center;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:.5rem}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.pcard .num{font-family:var(--mono);font-size:11px;color:var(--teal-d)}
+.proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+.status-pill{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;background:var(--seal-w);color:var(--seal-d);border-radius:5px;padding:.2rem .45rem;display:inline-block;margin-bottom:.5rem}
+.honest{background:var(--teal-d);color:var(--teal-w);border-bottom:none}
+.honest h2{color:#fff}.honest .section-sub{color:#C9DAD5}
+.riskgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.riskcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:1rem}
+.riskcard .tag{font-family:var(--mono);font-size:10px;color:#9FD4C6;display:block;margin-bottom:.35rem}
+.riskcard p{font-size:13px;color:#DCEAE6;margin:0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;counter-reset:s}
+@media(max-width:720px){.steps{grid-template-columns:1fr}}
+.step{padding-left:2.3rem;position:relative}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center}
+[data-theme="dark"] .step::before{color:#121816}
+[data-theme="dark"] .honest{background:#1E3D36;color:#D7E8E2;border-top:1px solid #2A4A42;border-bottom:1px solid #2A4A42}
+[data-theme="dark"] .honest h2{color:#F0F7F4}
+[data-theme="dark"] .honest .section-sub{color:#B5CBC3}
+[data-theme="dark"] .riskcard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
+[data-theme="dark"] .riskcard .tag{color:#9FD4C6}
+[data-theme="dark"] .riskcard p{color:#D4E5DF}
+[data-theme="dark"] .honest a{color:#B8E6D9;font-weight:600}
+</style>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<section class="hero"><div class="wrap hero-grid">
+<div>
+<p class="eyebrow" data-i18n="i_eye">Constitutional core + reference implementations</p>
+<h1 data-i18n="i_h1">Open rules. Working prototypes.</h1>
+<p class="lead" data-i18n="i_lead">OSS is not a state and not the only answer.</p>
+<div class="plural" data-i18n="i_plural" data-i18n-html="1">Geolibertarian economics is a deliberate choice...</div>
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem">
+<a class="btn primary" href="core.html" data-i18n="i_btn_core">Read the Core</a>
+<a class="btn" href="participate.html" data-i18n="i_btn_join">How to participate</a>
+<a class="btn" href="OSS_Polis_MVP_v3.html" data-i18n="i_btn_civic">Civic signal</a>
+</div>
+</div>
+<div>
+<div class="domains">
+<div class="dcircle d-enf"><b data-i18n="i_enf">Enforcement</b><span data-i18n="i_enf_sub">court · conscientious refusal</span></div>
+<div class="dcircle d-data"><b data-i18n="i_data">Data</b><span data-i18n="i_data_sub">observation · scoring</span></div>
+<div class="dcircle d-fin"><b data-i18n="i_fin">Finance</b><span data-i18n="i_fin_sub">LVT · Fund · Dividend</span></div>
+</div>
+<p class="dcaption" data-i18n="i_cap">Art. VI · anti-concentration</p>
+</div>
+</div></section>
+
+<section><div class="wrap">
+<h2 data-i18n="i_p_h2">Four principles in plain language</h2>
+<p class="section-sub" data-i18n="i_p_sub">Arts. I, III, IV, VII</p>
+<div class="principles">
+<div class="card pcard"><span class="num" data-i18n="i_num1">ART. I</span><h3 data-i18n="i_p1_t">Your body and labor are yours</h3><p data-i18n="i_p1_p">Ban on aggression.</p><a href="core.html#art1" data-i18n="i_art1">Article I →</a></div>
+<div class="card pcard"><span class="num" data-i18n="i_num3">ART. III</span><h3 data-i18n="i_p3_t">Presumption of freedom</h3><p data-i18n="i_p3_p">What is not forbidden is allowed.</p><a href="core.html#art3" data-i18n="i_art3">Article III →</a></div>
+<div class="card pcard"><span class="num" data-i18n="i_num4">ART. IV</span><h3 data-i18n="i_p4_t">No mandatory mobilization</h3><p data-i18n="i_p4_p">Voluntary contract.</p><a href="core.html#art4" data-i18n="i_art4">Article IV →</a></div>
+<div class="card pcard"><span class="num" data-i18n="i_num7">ART. VII</span><h3 data-i18n="i_p7_t">Reciprocal transparency</h3><p data-i18n="i_p7_p">Power is observable.</p><a href="core.html#art7" data-i18n="i_art7">Article VII →</a></div>
+</div>
+</div></section>
+
+<section><div class="wrap">
+<h2 data-i18n="i_proof_h2">Verified, not only claimed</h2><p class="section-sub" data-i18n="i_proof_sub">Prototypes passed Gauntlet Loop.</p>
+<div class="proof-grid">
+<div class="card"><span class="status-pill" data-i18n="i_pill_mvp">STATE_LOCK · MVP</span><h3 data-i18n="i_court_h">Court module</h3><p data-i18n="i_court_p">Cats 1/2/3...</p><p style="margin-top:.7rem"><a href="OSS_Court_MVP_v8.html" data-i18n="i_open_proto">Open prototype →</a></p></div>
+<div class="card"><span class="status-pill" data-i18n="i_pill_mvp">STATE_LOCK · MVP</span><h3 data-i18n="i_civic_h">Civic layer</h3><p data-i18n="i_civic_p">Polis-style sentiment.</p><p style="margin-top:.7rem"><a href="OSS_Polis_MVP_v3.html" data-i18n="i_open_proto">Open prototype →</a></p></div>
+<div class="card"><span class="status-pill" data-i18n="i_pill_calc">calculator</span><h3 data-i18n="i_econ_h">Economy</h3><p data-i18n="i_econ_p">LVT, Dividend, Fund.</p><p style="margin-top:.7rem"><a href="economy.html" data-i18n="i_econ_page">Economy page →</a></p></div>
+</div>
+</div></section>
+
+<section class="honest"><div class="wrap">
+<h2 data-i18n="i_honest_h2">What we honestly do not treat as closed</h2><p class="section-sub" data-i18n="i_honest_sub">Part of project good faith.</p>
+<div class="riskgrid">
+<div class="riskcard"><span class="tag" data-i18n="i_risk1_t">METRIC_GAMING · 7.4.6</span><p data-i18n="i_risk1_p">Influence spread...</p></div>
+<div class="riskcard"><span class="tag" data-i18n="i_risk2_t">CUSTODY · inheritance</span><p data-i18n="i_risk2_p">Oral nominee...</p></div>
+<div class="riskcard"><span class="tag" data-i18n="i_risk3_t">STANDARD DRIFT · 8.1</span><p data-i18n="i_risk3_p">Quiet hegemony...</p></div>
+</div>
+<p style="margin-top:1.2rem"><a href="open-questions.html" style="color:#fff;font-weight:600" data-i18n="i_registry">Open questions registry →</a></p>
+</div></section>
+
+<section><div class="wrap">
+<h2 data-i18n="i_btn_join">How to participate</h2>
+<div class="steps">
+<div class="step"><h3 data-i18n="i_s1_t">Rights are already yours</h3><p style="font-size:13px;color:var(--soft)" data-i18n="i_s1_p">Arts. I–VII bind power.</p></div>
+<div class="step"><h3 data-i18n="i_s2_t">Voice by consent</h3><p style="font-size:13px;color:var(--soft)" data-i18n="i_s2_p">Genesis (18+).</p></div>
+<div class="step"><h3 data-i18n="i_s3_t">Exit always</h3><p style="font-size:13px;color:var(--soft)" data-i18n="i_s3_p">Fork or relocate.</p></div>
+</div>
+<p style="margin-top:1.2rem"><a class="btn primary" href="participate.html" data-i18n="i_join_more">More on participation</a></p>
+</div></section>
+
+<footer data-i18n="i_foot">OSS Public Prototype · not a production system</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

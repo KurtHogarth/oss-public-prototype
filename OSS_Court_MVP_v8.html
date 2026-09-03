@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ОСО — Судебный/арбитражный модуль (5.3) · MVP v8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F4EE; --paper-raised:#FFFFFF; --ink:#20302C; --ink-soft:#4C5B57; --ink-faint:#8A948F;
+  --line:#D9D4C6; --line-strong:#B9B2A0; --verdigris:#3F7268; --verdigris-dark:#28453F; --verdigris-wash:#E4EEEB;
+  --seal:#B7862C; --seal-wash:#F7EBD4; --seal-d:#896421;
+  --cat1:#3B7A3B; --cat1-wash:#E7F1E5; --cat2:#B7862C; --cat2-wash:#F7EBD4; --cat3:#A63A3A; --cat3-wash:#F6E4E2;
+  --danger:#A63A3A; --radius:10px;
+  --serif:'Source Serif 4', Georgia, serif; --mono:'IBM Plex Mono', monospace; --sans:'Inter', -apple-system, sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;padding:1.2rem 1.4rem 4.5rem}
+.wrap{max-width:920px;margin:0 auto}
+header.page{margin-bottom:2rem;border-bottom:1px solid var(--line);padding-bottom:1.3rem}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--verdigris-dark);text-transform:uppercase;margin:0 0 .35rem}
+h1{font-family:var(--serif);font-weight:600;font-size:28px;margin:0 0 .25rem}
+.sub{color:var(--ink-soft);font-size:14px;max-width:640px;margin:0}
+.thebar{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:.5rem}
+.disc{font-size:11.5px;color:var(--ink-soft);background:var(--verdigris-wash);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.4rem}
+section{margin-bottom:1.5rem}
+.card{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:1.35rem 1.5rem}
+h2{font-family:var(--serif);font-weight:600;font-size:17px;margin:0 0 .85rem}
+.field{margin-bottom:.95rem}
+label{display:block;font-size:12.5px;font-weight:500;color:var(--ink-soft);margin-bottom:.3rem}
+input[type=text],textarea,select{
+  width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);background:var(--paper);
+  border:1px solid var(--line-strong);border-radius:6px;padding:.55rem .65rem;outline:none
+}
+textarea{resize:vertical;min-height:72px}
+input:focus,textarea:focus,select:focus{border-color:var(--verdigris);box-shadow:0 0 0 3px var(--verdigris-wash)}
+.catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
+.catopt{border:1.5px solid var(--line-strong);border-radius:8px;padding:.75rem .8rem;cursor:pointer;background:var(--paper)}
+.catopt.sel{border-color:var(--verdigris);background:var(--verdigris-wash)}
+.catopt .tag{font-family:var(--mono);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.catopt .cn{font-weight:600;font-size:13.5px;margin:.2rem 0 .15rem}
+.catopt .cd{font-size:12px;color:var(--ink-soft)}
+.triggers{display:flex;flex-direction:column;gap:.35rem;margin:.5rem 0}
+.triggers label{display:flex;align-items:flex-start;gap:.45rem;font-size:12.5px;color:var(--ink);font-weight:400;cursor:pointer}
+.triggers input{width:auto;margin-top:2px}
+button{font-family:var(--sans);font-size:13.5px;font-weight:500;cursor:pointer;border-radius:7px;padding:.6rem 1.05rem;border:1.5px solid var(--ink);background:var(--ink);color:#fff}
+button.secondary{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+button.secondary:hover{border-color:var(--ink)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.gate{background:var(--seal);border-color:var(--seal);color:#3A2A08;font-weight:600}
+button.gate:hover{background:#a5751f}
+button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.hidden{display:none!important}
+.ticket{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.35rem;margin-bottom:1.2rem}
+.ticket .id{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.ticket .title{font-family:var(--serif);font-size:17px;font-weight:600;margin:.15rem 0 .4rem}
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;padding:.22rem .5rem;border-radius:5px;text-transform:uppercase;letter-spacing:.03em}
+.badge.c1{background:var(--cat1-wash);color:var(--cat1)}
+.badge.c2{background:var(--cat2-wash);color:var(--cat2)}
+.badge.c3{background:var(--cat3-wash);color:var(--cat3)}
+.sla{text-align:right;font-size:12.5px;color:var(--ink-soft)}
+.sla b{display:block;font-family:var(--mono);font-size:14px;color:var(--ink)}
+.steplog{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:.8rem .95rem;margin:.65rem 0;white-space:pre-wrap;line-height:1.65;max-height:200px;overflow-y:auto}
+.steplog .ok{color:var(--verdigris-dark);font-weight:600}
+.steplog .warn{color:var(--seal-d);font-weight:600}
+.steplog .err{color:var(--danger);font-weight:600}
+.jurypool{display:flex;flex-wrap:wrap;gap:7px;margin:.65rem 0 .9rem}
+.token{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);background:var(--paper);transition:all .25s ease}
+.token.drawn{border-color:var(--seal);background:var(--seal-wash);color:#3A2A08;font-weight:600;transform:scale(1.08)}
+.jurorrow{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:13px}
+.jurorrow:last-child{border-bottom:none}
+.jn{font-weight:500}.jv{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.jrep{font-family:var(--mono);font-size:11.5px;padding:.12rem .45rem;border-radius:5px;background:var(--verdigris-wash);color:var(--verdigris-dark)}
+.jrep.up{background:var(--cat1-wash);color:var(--cat1);font-weight:600}
+.verdictbox{border:1.5px dashed var(--line-strong);border-radius:var(--radius);padding:1.1rem 1.35rem;margin-top:.85rem;background:var(--paper)}
+.verdictbox.draft{border-color:var(--seal)}
+.verdictbox.published{border-style:solid;border-color:var(--verdigris);background:var(--verdigris-wash)}
+.verdictbox.rejected{border-style:solid;border-color:var(--danger);background:var(--cat3-wash)}
+.vstatus{font-family:var(--mono);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.vstatus.draft{color:var(--seal-d)}.vstatus.published{color:var(--verdigris-dark)}.vstatus.rejected{color:var(--danger)}
+.vtext{font-family:var(--serif);font-size:15px;margin:.5rem 0 .85rem}
+.gatewarn{font-size:12px;color:var(--ink-soft);margin-top:.5rem;max-width:540px}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.7rem}
+.inv{font-family:var(--mono);font-size:10.5px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:.55rem .7rem;margin:.55rem 0;color:var(--ink-soft)}
+footer.note{margin-top:2.5rem;padding-top:1.1rem;border-top:1px solid var(--line);font-size:12px;color:var(--ink-faint)}
+@media(max-width:640px){.catgrid{grid-template-columns:1fr}}
+
+[data-theme="dark"]{
+  --paper:#121816;--raised:#1A221F;--ink:#E8EDE9;--soft:#A8B5AF;--faint:#6B7A74;
+  --line:#2A3530;--strong:#3D4A44;--teal:#5BA89A;--teal-d:#7BC4B5;--teal-w:#1A2E2A;
+  --seal:#D4A84B;--seal-w:#3A3218;--seal-d:#D4A84B;--yes:#3B7A3B;--yes-w:#1A2E1F;--no:#A63A3A;--no-w:#3A1F1F;
+}
+/* ponytail: site-bar dead — site.js header */
+
+
+
+
+
+.theme-btn{font-family:var(--mono);font-size:11px;border:1px solid var(--strong);border-radius:20px;padding:.3rem .65rem;background:transparent;color:var(--soft);cursor:pointer}
+
+
+[data-theme="dark"]{
+  --paper:#121816;
+  --paper-raised:#1A221F;
+  --ink:#E8EDE9;
+  --ink-soft:#A8B5AF;
+  --ink-faint:#6B7A74;
+  --line:#2A3530;
+  --line-strong:#3D4A44;
+  --verdigris-wash:#1A2E2A;
+  --verdigris:#5BA89A;
+  --verdigris-dark:#7BC4B5;
+  --seal-wash:#3A3218;
+  --seal:#D4A84B;
+  --cat1-wash:#1A2E1F;--cat2-wash:#1A2E2A;--cat3-wash:#3A1F1F;
+}
+[data-theme="dark"] button{color:#121816}
+[data-theme="dark"] button.secondary{color:var(--ink);background:transparent}
+[data-theme="dark"] button.gate{color:#1A1408}
+[data-theme="dark"] .token.drawn{color:#E6D5A8}
+
+</style>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <p class="eyebrow" data-i18n-en="OSS · TASK 4 · Gauntlet Loop · MVP v8" data-i18n-ua="ОСС · TASK 4 · Gauntlet Loop · MVP v8" data-i18n-ru="ОСО · TASK 4 · Gauntlet Loop · MVP v8">OSS · TASK 4 · Gauntlet Loop · MVP v8</p>
+    <h1 data-i18n-en="Court / arbitration module (5.3)" data-i18n-ua="Судовий / арбітражний модуль (5.3)" data-i18n-ru="Судебный / арбитражный модуль (5.3)">Court / arbitration module (5.3)</h1>
+    <p class="sub" data-i18n-en="Three categories · lottery with visible seed · Schelling · fail-closed classification · HUMAN_CONFIRMATION as the only path to publication." data-i18n-ua="Три категорії · жереб із видимим seed · Schelling · fail-closed класифікація · людське підтвердження як єдиний шлях до публікації." data-i18n-ru="Три категории · жребий с видимым seed · Schelling · fail-closed классификация · человеческое подтверждение как единственный путь к публикации.">Three categories · lottery with visible seed · Schelling · fail-closed classification · HUMAN_CONFIRMATION as the only path to publication.</p>
+    <p class="thebar" data-i18n-en="THE_BAR: Kleros · state-machine invariants · simulation, no on-chain" data-i18n-ua="THE_BAR: Kleros · інваріанти машини станів · симуляція без on-chain" data-i18n-ru="THE_BAR: Kleros · инварианты машины состояний · симуляция без on-chain">THE_BAR: Kleros · state-machine invariants · simulation, no on-chain</p>
+  </header>
+
+  <div class="disc" data-i18n-html="1" data-i18n-en="<strong>Hard invariants (code-enforced):</strong><br>
+    • <code>PUBLISHED ⇒ previous phase = HUMAN_CONFIRMATION</code> — no other transition to PUBLISHED exists in ALLOWED table<br>
+    • Browser <code>Math.random</code> / LCG = <strong>simulation-only</strong>; not cryptographic unpredictability; seed committed before draw; full replay log seed→pool→selection→result<br>
+    • SLA (display-only, never publishes): Cat1 = 24–48 hours · Cat2 = 5–10 days · Cat3 = 24–48 hours review; no timer calls publish; expiry → stay/HOLD<br>
+    • Fail-closed: floor(triggers) independent of user category; effective = max(requested, floor)<br>
+    • Reclassify nulls proposed, jury, seed, votes; lineageInvalid=true<br>
+    • Confirm requires attestation text ≥10 chars + checkbox" data-i18n-ua="<strong>Жорсткі інваріанти (забезпечені кодом):</strong><br>
+    • <code>PUBLISHED ⇒ попередня фаза = HUMAN_CONFIRMATION</code> — жодного іншого переходу до PUBLISHED немає в таблиці ALLOWED<br>
+    • Browser <code>Math.random</code> / LCG = <strong>лише симуляція</strong>; не криптографічна непередбачуваність; seed зафіксовано до жеребу; повний replay-лог seed→pool→selection→result<br>
+    • SLA (лише відображення, ніколи не публікує): Кат.1 = 24–48 годин · Кат.2 = 5–10 днів · Кат.3 = 24–48 годин review; жоден таймер не викликає publish; закінчення → stay/HOLD<br>
+    • Fail-closed: floor(тригери) незалежний від категорії користувача; effective = max(запитана, floor)<br>
+    • Reclassify обнуляє proposed, журі, seed, голоси; lineageInvalid=true<br>
+    • Confirm потребує тексту атестації ≥10 символів + чекбокс" data-i18n-ru="<strong>Жёсткие инварианты (обеспечены кодом):</strong><br>
+    • <code>PUBLISHED ⇒ предыдущая фаза = HUMAN_CONFIRMATION</code> — никакого другого перехода в PUBLISHED нет в таблице ALLOWED<br>
+    • Browser <code>Math.random</code> / LCG = <strong>только симуляция</strong>; не криптографическая непредсказуемость; seed зафиксирован до жребия; полный replay-лог seed→pool→selection→result<br>
+    • SLA (только отображение, никогда не публикует): Кат.1 = 24–48 часов · Кат.2 = 5–10 дней · Кат.3 = 24–48 часов review; ни один таймер не вызывает publish; истечение → stay/HOLD<br>
+    • Fail-closed: floor(триггеры) независим от категории пользователя; effective = max(запрошенная, floor)<br>
+    • Reclassify обнуляет proposed, жюри, seed, голоса; lineageInvalid=true<br>
+    • Confirm требует текста аттестации ≥10 символов + чекбокс">
+    <strong>Hard invariants (code-enforced):</strong><br>
+    • <code>PUBLISHED ⇒ previous phase = HUMAN_CONFIRMATION</code> — no other transition to PUBLISHED exists in ALLOWED table<br>
+    • Browser <code>Math.random</code> / LCG = <strong>simulation-only</strong>; not cryptographic unpredictability; seed committed before draw; full replay log seed→pool→selection→result<br>
+    • SLA (display-only, never publishes): Cat1 = 24–48 hours · Cat2 = 5–10 days · Cat3 = 24–48 hours review; no timer calls publish; expiry → stay/HOLD<br>
+    • Fail-closed: floor(triggers) independent of user category; effective = max(requested, floor)<br>
+    • Reclassify nulls proposed, jury, seed, votes; lineageInvalid=true<br>
+    • Confirm requires attestation text ≥10 chars + checkbox
+  </div>
+
+  <!-- INTAKE -->
+  <section id="sec-intake">
+    <div class="card">
+      <h2 data-i18n-en="1 · Case intake" data-i18n-ua="1 · Прийом справи" data-i18n-ru="1 · Приём дела">1 · Case intake</h2>
+      <div class="field">
+        <label for="title" data-i18n-en="Title" data-i18n-ua="Заголовок" data-i18n-ru="Заголовок">Title</label>
+        <input type="text" id="title" placeholder="Спор о выполнении условия договора…" data-i18n-en-ph="Dispute over contract clause performance…" data-i18n-ua-ph="Спір про виконання умови договору…" data-i18n-ru-ph="Спор о выполнении условия договора…">
+      </div>
+      <div class="field">
+        <label for="desc" data-i18n-en="Description" data-i18n-ua="Опис" data-i18n-ru="Описание">Description</label>
+        <textarea id="desc" placeholder="Суть спора или бесспорного нарушения…" data-i18n-en-ph="The substance of the dispute or the undisputed violation…" data-i18n-ua-ph="Суть спору чи безспірного порушення…" data-i18n-ru-ph="Суть спора или бесспорного нарушения…"></textarea>
+      </div>
+      <div class="field">
+        <label data-i18n-en="Claimed category (not final — fail-closed floor applies)" data-i18n-ua="Заявлена категорія (не фінальна — діє fail-closed floor)" data-i18n-ru="Заявленная категория (не финальная — действует fail-closed floor)">Claimed category (not final — fail-closed floor applies)</label>
+        <div class="catgrid" id="catGrid">
+          <div class="catopt" data-cat="1">
+            <div class="tag" style="color:var(--cat1)">Category 1</div>
+            <div class="cn" data-i18n-en="Simple / undisputed" data-i18n-ua="Просте / безспірне" data-i18n-ru="Простое / бесспорное">Simple / undisputed</div>
+            <div class="cd" data-i18n-en="Clear-cut clause. Rule-engine. SLA 24–48h. Does not publish itself." data-i18n-ua="Чітка умова. Rule-engine. SLA 24–48г. Не публікує сама." data-i18n-ru="Чёткое условие. Rule-engine. SLA 24–48ч. Не публикует сама.">Clear-cut clause. Rule-engine. SLA 24–48h. Does not publish itself.</div>
+          </div>
+          <div class="catopt" data-cat="2">
+            <div class="tag" style="color:var(--cat2)">Category 2</div>
+            <div class="cn" data-i18n-en="Contested facts" data-i18n-ua="Спірні факти" data-i18n-ru="Спорные факты">Contested facts</div>
+            <div class="cd" data-i18n-en="Lottery 3–5, Schelling, SLA 5–10 days." data-i18n-ua="Жереб 3–5, Schelling, SLA 5–10 днів." data-i18n-ru="Жребий 3–5, Schelling, SLA 5–10 дней.">Lottery 3–5, Schelling, SLA 5–10 days.</div>
+          </div>
+          <div class="catopt" data-cat="3">
+            <div class="tag" style="color:var(--cat3)">Category 3</div>
+            <div class="cn" data-i18n-en="Constitutional" data-i18n-ua="Конституційне" data-i18n-ru="Конституционное">Constitutional</div>
+            <div class="cd" data-i18n-en="Human path only. SLA 24–48h review." data-i18n-ua="Лише шлях через людину. SLA 24–48 год. на розгляд." data-i18n-ru="Только путь через человека. SLA 24–48 ч на разбор.">Human path only. SLA 24–48h review.</div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label data-i18n-en="Fail-closed triggers (independent of claimed category)" data-i18n-ua="Fail-closed тригери (незалежні від заявленої категорії)" data-i18n-ru="Fail-closed триггеры (независимы от заявленной категории)">Fail-closed triggers (independent of claimed category)</label>
+        <div class="triggers">
+          <label><input type="checkbox" id="t-rights"> <span data-i18n-en="Rights-sensitive (rights / property / freedom)" data-i18n-ua="Чутливе до прав (права / власність / свобода)" data-i18n-ru="Чувствительные к правам (права / собственность / свобода)">Rights-sensitive (rights / property / freedom)</span></label>
+          <label><input type="checkbox" id="t-const"> <span data-i18n-en="Constitutional / Core / system rules" data-i18n-ua="Конституційне / Ядро / системні правила" data-i18n-ru="Конституционные / Ядро / системные правила">Constitutional / Core / system rules</span></label>
+          <label><input type="checkbox" id="t-contest"> <span data-i18n-en="Contested facts / ambiguous interpretation" data-i18n-ua="Спірні факти / неоднозначне трактування" data-i18n-ru="Спорные факты / неоднозначная трактовка">Contested facts / ambiguous interpretation</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <button id="submitBtn" data-i18n-en="Submit case" data-i18n-ua="Подати справу" data-i18n-ru="Подать дело">Submit case</button>
+        <button class="secondary" type="button" onclick="demo(1)" data-i18n-en="Demo 1" data-i18n-ua="Демо 1" data-i18n-ru="Демо 1">Demo 1</button>
+        <button class="secondary" type="button" onclick="demo(2)" data-i18n-en="Demo 2" data-i18n-ua="Демо 2" data-i18n-ru="Демо 2">Demo 2</button>
+        <button class="secondary" type="button" onclick="demo(3)" data-i18n-en="Demo 3" data-i18n-ua="Демо 3" data-i18n-ru="Демо 3">Demo 3</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-ticket" class="hidden"></section>
+  <section id="sec-process" class="hidden"></section>
+  <section id="sec-gate" class="hidden"></section>
+  <section id="sec-final" class="hidden"></section>
+
+  <footer class="note" data-i18n-en="MVP simulation. State lives only in this tab's memory. No verdict is published without explicit HUMAN_CONFIRMATION with a substantive attestation.
+    For production: commit-reveal RNG, append-only audit log, machine-checkable transition guards." data-i18n-ua="MVP-симуляція. Стан лише в памʼяті вкладки. Жоден вердикт не публікується без явного людського підтвердження зі змістовною атестацією.
+    Для production: commit-reveal RNG, append-only журнал аудиту, перевірювані інваріанти переходів." data-i18n-ru="MVP-симуляция. Состояние только в памяти вкладки. Ни один вердикт не публикуется без явного человеческого подтверждения с содержательной аттестацией.
+    Для production: commit-reveal RNG, append-only журнал аудиту, перевірювані інваріанти переходів.">
+    MVP-симуляция. Состояние только в памяти вкладки. Ни один вердикт не публикуется без явного человеческого подтверждения с содержательной аттестацией.
+    Для production: commit-reveal RNG, append-only журнал аудита, проверяемые инварианты переходов.
+  </footer>
+</div>
+
+<script>
+function lang(){ return localStorage.getItem('oss-lang') || 'en'; }
+const CTX = {
+  en: {
+    voting:'3 · Voting (Schelling)', votingNote:"Those who match the majority gain +reputation.", castVotesBtn:'Simulate votes',
+    forPlaintiff:'For plaintiff', forDefendant:'For defendant', partial:'Partial',
+    repUp:'+1 reputation', repZero:'0',
+    hcTitle:'4 · HUMAN_CONFIRMATION',
+    invText:'ИНВАРИАНТ: PUBLISHED достижим ТОЛЬКО из этой фазы (HUMAN_CONFIRMATION).<br>Никакой SLA-таймер, обработчик ошибок или UI-путь не может опубликовать.<br>GUARD: phase=HUMAN_CONFIRMATION ∧ текст аттестации≥10 ∧ checkbox<br>POST: PUBLISHED | REJECTED | RECLASSIFY (обнуляет proposed/jury/seed)',
+    proposedWaiting:'PROPOSED — awaiting a human', attestLabel:'Substantive attestation (required, ≥10 characters)',
+    attestPh:'What grounds, seed, panel, category did you check…',
+    confirmCb:'I confirm review and take responsibility for this decision',
+    btnPublish:'Confirm and publish', btnReject:'Reject', btnReclassify:'Reclassify (reset proposed)',
+    gateWarn:'Before pressing "Confirm", the verdict is not considered published. SLA, error paths, and UI bypasses have no transition to PUBLISHED.',
+    seedProposed:(seed,pid)=>`seed: ${seed} · proposed_id: ${pid}`,
+    finalTitle:'5 · Finalization', published:'PUBLISHED — confirmed by a human', rejected:'REJECTED — declined by a human',
+    verdictNotPublished:'Verdict not published', rejectedNote:'Declined at HUMAN_CONFIRMATION. The state machine does not permit publish.',
+    invReached:(yes)=>`Invariant: PUBLISHED reached only via HUMAN_CONFIRMATION → ${yes?'PASS':'n/a'}`,
+    newCase:'New case',
+    fillFields:'Fill in the title and description', pickCategory:'Pick a category',
+    reclassifyAlert:'Proposed invalidated. Full reclassification required.',
+    catRule:'2 · Category 1 — rule-engine', catRuleNote:'Clause template → matched against facts → PROPOSED (not publish).', runCheck:'Run check',
+    juryTitle:(jury,pool)=>`2 · Jury lottery (${jury} of ${pool})`,
+    juryNote:'Seed is committed before the draw. Pool tokens highlight when drawn.',
+    rngDisclaimer:'<strong>RNG disclaimer:</strong> browser LCG = simulation-only. Not a crypto-RNG. Production requires commit-reveal + CSPRNG. Replay log: seed → pool → selection → result.',
+    drawBtn:'Run the draw',
+    cat3Title:'2 · Category 3 — human path only', cat3Note:'Auto-verdict is forbidden. A package is prepared for HUMAN_CONFIRMATION.', prepBtn:'Prepare PROPOSED',
+    slaCannotPublish:'cannot publish',
+    slaLabels:{1:'SLA 24–48 hours (WP 5.3)', 2:'SLA 5–10 days (WP 5.3)', 3:'SLA 24–48 hours review (WP 5.3)'},
+    catLabels:{1:'Category 1 · Simple', 2:'Category 2 · Contested facts', 3:'Category 3 · Constitutional'},
+    ticketMeta:(caseId,req,eff)=>`${caseId} · claimed Cat.${req} → effective Cat.${eff}`,
+    demo:{
+      1:{t:'Late rent payment under contract #42', d:'Clause 7.1 — payment due by the 5th. July unpaid. Statement confirms.'},
+      2:{t:'Hidden defect in delivery', d:'Buyer claims a hidden defect. Supplier points to an acceptance act with no remarks.'},
+      3:{t:'Possible violation of Art. VI', d:'One institution simultaneously controls citizen data and Sovereign Fund flows.'}
+    },
+    steps:['clause template loaded','fields extracted (demo)','matching: found','rule applied → PROPOSED_VERDICT'],
+    logCommit:(seed)=>'1. COMMIT seed='+seed+' (committed BEFORE selection)',
+    logPoolAlgo:(pool,jury)=>'2. poolSize='+pool+' jurySize='+jury+' algo=LCG-v8',
+    logTuple:'3. replay_tuple={seed, poolSize, jurySize, algo}',
+    logSelected:(idx)=>'4. selected indices: ['+idx+']',
+    logResult:'5. RESULT: draw is reproducible from seed (deterministic replay)',
+    logMajority:(maj,n,total)=>'majority='+maj+' ('+n+'/'+total+')',
+    proposeCollegial:(maj)=>'Panel verdict: '+maj+' (proposed)',
+    proposeCollegialReason:(n,total)=>`Majority ${n}/${total}. Schelling applied. PROPOSED only.`,
+    proposeCat3Outcome:'REFERRED TO CONSTITUTIONAL REVIEW', proposeCat3Reason:'Possible violation of the Core / system rules. Human path only.',
+    proposeCat1Outcome:'GRANT (proposed)', proposeCat1Reason:'A clear-cut clause violation established. This is PROPOSED, not a published act.',
+    cat3Ready:'Cat3 package ready', invalidateLineage:'INVALIDATE proposed + jury + seed lineage', lineageBlocked:'lineage invalidated — confirm blocked'
+  },
+  ua: {
+    voting:'3 · Голосування (Schelling)', votingNote:'Ті, хто збігся з більшістю, отримують +репутацію.', castVotesBtn:'Змоделювати голоси',
+    forPlaintiff:'На користь позивача', forDefendant:'На користь відповідача', partial:'Частково',
+    repUp:'+1 репутація', repZero:'0',
+    hcTitle:'4 · Людське підтвердження',
+    invText:'ІНВАРІАНТ: PUBLISHED досяжний ЛИШЕ з цієї фази (HUMAN_CONFIRMATION).<br>Жоден SLA-таймер, обробник помилок чи UI-шлях не може опублікувати.<br>GUARD: phase=HUMAN_CONFIRMATION ∧ текст атестації≥10 ∧ checkbox<br>POST: PUBLISHED | REJECTED | RECLASSIFY (обнуляє proposed/jury/seed)',
+    proposedWaiting:'PROPOSED — очікує людину', attestLabel:'Змістовна атестація (обовʼязково, ≥10 символів)',
+    attestPh:'Які підстави, seed, склад, категорію ви перевірили…',
+    confirmCb:'Підтверджую ознайомлення і відповідальність за рішення',
+    btnPublish:'Підтвердити і опублікувати', btnReject:'Відхилити', btnReclassify:'Перекласифікувати (скинути proposed)',
+    gateWarn:'До натискання «Підтвердити» вердикт не вважається опублікованим. SLA, error та UI-обхід не мають переходу в PUBLISHED.',
+    seedProposed:(seed,pid)=>`seed: ${seed} · proposed_id: ${pid}`,
+    finalTitle:'5 · Завершення', published:'PUBLISHED — підтверджено людиною', rejected:'REJECTED — відхилено людиною',
+    verdictNotPublished:'Вердикт не опубліковано', rejectedNote:'Відхилено на HUMAN_CONFIRMATION. State machine не допускає publish.',
+    invReached:(yes)=>`Invariant: PUBLISHED досягнуто лише через HUMAN_CONFIRMATION → ${yes?'PASS':'n/a'}`,
+    newCase:'Нова справа',
+    fillFields:'Заповніть заголовок і опис', pickCategory:'Оберіть категорію',
+    reclassifyAlert:'Proposed інвалідовано. Потрібна повна нова класифікація.',
+    catRule:'2 · Категорія 1 — rule-engine', catRuleNote:'Шаблон умови → зіставлення з фактами → PROPOSED (не publish).', runCheck:'Запустити перевірку',
+    juryTitle:(jury,pool)=>`2 · Жереб присяжних (${jury} з ${pool})`,
+    juryNote:'Seed фіксується до вибору. Токени пулу підсвічуються при випаданні.',
+    rngDisclaimer:'<strong>RNG disclaimer:</strong> browser LCG = лише симуляція. Не crypto-RNG. Production потребує commit-reveal + CSPRNG. Replay log: seed → pool → selection → result.',
+    drawBtn:'Провести жеребкування',
+    cat3Title:'2 · Категорія 3 — лише шлях через людину', cat3Note:'Авто-вердикт заборонено. Формується пакет для HUMAN_CONFIRMATION.', prepBtn:'Сформувати PROPOSED',
+    slaCannotPublish:'не може опублікувати',
+    slaLabels:{1:'SLA 24–48 годин (WP 5.3)', 2:'SLA 5–10 днів (WP 5.3)', 3:'SLA 24–48 годин review (WP 5.3)'},
+    catLabels:{1:'Category 1 · Simple', 2:'Category 2 · Contested facts', 3:'Category 3 · Constitutional'},
+    ticketMeta:(caseId,req,eff)=>`${caseId} · заявлено Кат.${req} → effective Кат.${eff}`,
+    demo:{
+      1:{t:'Прострочення оренди за договором №42', d:'П.7.1 — оплата до 5-го числа. Липень не оплачено. Виписка підтверджує.'},
+      2:{t:'Прихований дефект постачання', d:'Покупець заявляє прихований дефект. Постачальник посилається на акт приймання без зауважень.'},
+      3:{t:'Можливе порушення Ст. VI', d:'Один інститут одночасно контролює дані громадян і потоки Sovereign Fund.'}
+    },
+    steps:['шаблон умови завантажено','поля вилучено (демо)','зіставлення: збіг','rule applied → PROPOSED_VERDICT'],
+    logCommit:(seed)=>'1. COMMIT seed='+seed+' (зафіксовано ДО вибору)',
+    logPoolAlgo:(pool,jury)=>'2. poolSize='+pool+' jurySize='+jury+' algo=LCG-v8',
+    logTuple:'3. replay_tuple={seed, poolSize, jurySize, algo}',
+    logSelected:(idx)=>'4. вибрані індекси: ['+idx+']',
+    logResult:'5. RESULT: жеребкування відтворюване за seed (deterministic replay)',
+    logMajority:(maj,n,total)=>'majority='+maj+' ('+n+'/'+total+')',
+    proposeCollegial:(maj)=>'Вердикт колегії: '+maj+' (proposed)',
+    proposeCollegialReason:(n,total)=>`Більшість ${n}/${total}. Schelling застосовано. PROPOSED only.`,
+    proposeCat3Outcome:'НАПРАВЛЕНО НА КОНСТИТУЦІЙНИЙ ПЕРЕГЛЯД', proposeCat3Reason:'Можливе порушення Ядра / системних правил. Лише human path.',
+    proposeCat1Outcome:'ЗАДОВОЛЬНИТИ (proposed)', proposeCat1Reason:'Порушення чіткої умови встановлено. Це PROPOSED, не опублікований акт.',
+    cat3Ready:'Cat3 package ready', invalidateLineage:'INVALIDATE proposed + jury + seed lineage', lineageBlocked:'lineage invalidated — confirm blocked'
+  },
+  ru: {
+    voting:'3 · Голосование (Schelling)', votingNote:'Совпавшие с большинством получают +репутацию.', castVotesBtn:'Смоделировать голоса',
+    forPlaintiff:'В пользу истца', forDefendant:'В пользу ответчика', partial:'Частично',
+    repUp:'+1 репутация', repZero:'0',
+    hcTitle:'4 · Человеческое подтверждение',
+    invText:'INVARIANT: PUBLISHED reachable ONLY from this phase (HUMAN_CONFIRMATION).<br>No SLA timer, error handler, or UI path can publish.<br>GUARD: phase=HUMAN_CONFIRMATION ∧ attest text≥10 ∧ checkbox<br>POST: PUBLISHED | REJECTED | RECLASSIFY (nulls proposed/jury/seed)',
+    proposedWaiting:'PROPOSED — ожидает человека', attestLabel:'Содержательная аттестация (обязательно, ≥10 символов)',
+    attestPh:'Какие основания, seed, состав, категорию вы проверили…',
+    confirmCb:'Подтверждаю ознакомление и ответственность за решение',
+    btnPublish:'Подтвердить и опубликовать', btnReject:'Отклонить', btnReclassify:'Reclassify (сбросить proposed)',
+    gateWarn:'До нажатия «Подтвердить» вердикт не считается опубликованным. SLA, error и UI-обходы не имеют перехода в PUBLISHED.',
+    seedProposed:(seed,pid)=>`seed: ${seed} · proposed_id: ${pid}`,
+    finalTitle:'5 · Завершение', published:'PUBLISHED — подтверждено человеком', rejected:'REJECTED — отклонено человеком',
+    verdictNotPublished:'Вердикт не опубликован', rejectedNote:'Отклонено на HUMAN_CONFIRMATION. State machine не допускает publish.',
+    invReached:(yes)=>`Invariant: PUBLISHED reached only via HUMAN_CONFIRMATION → ${yes?'PASS':'n/a'}`,
+    newCase:'Новое дело',
+    fillFields:'Заполните заголовок и описание', pickCategory:'Выберите категорию',
+    reclassifyAlert:'Proposed инвалидирован. Полная новая классификация.',
+    catRule:'2 · Категория 1 — rule-engine', catRuleNote:'Шаблон условия → сопоставление с фактами → PROPOSED (не publish).', runCheck:'Запустить проверку',
+    juryTitle:(jury,pool)=>`2 · Жребий присяжных (${jury} из ${pool})`,
+    juryNote:'Seed фиксируется до выбора. Токены пула подсвечиваются при выпадении.',
+    rngDisclaimer:'<strong>RNG (оговорка):</strong> browser LCG = только симуляция. Не crypto-RNG. Production требует commit-reveal / VRF.',
+    drawBtn:'Провести жеребьёвку',
+    cat3Title:'2 · Категория 3 — только путь через человека', cat3Note:'Авто-вердикт запрещён. Формируется пакет для HUMAN_CONFIRMATION.', prepBtn:'Сформировать PROPOSED',
+    slaCannotPublish:'не может опубликовать',
+    slaLabels:{1:'SLA 24–48 часов (WP 5.3)', 2:'SLA 5–10 дней (WP 5.3)', 3:'SLA 24–48 часов review (WP 5.3)'},
+    catLabels:{1:'Category 1 · Simple', 2:'Category 2 · Contested facts', 3:'Category 3 · Constitutional'},
+    ticketMeta:(caseId,req,eff)=>`${caseId} · заявлено Кат.${req} → effective Кат.${eff}`,
+    demo:{
+      1:{t:'Просрочка аренды по договору №42', d:'П.7.1 — оплата до 5-го числа. Июль не оплачен. Выписка подтверждает.'},
+      2:{t:'Скрытый дефект поставки', d:'Покупатель заявляет скрытый дефект. Поставщик ссылается на акт приёмки без замечаний.'},
+      3:{t:'Возможное нарушение Ст. VI', d:'Один институт одновременно контролирует данные граждан и потоки Sovereign Fund.'}
+    },
+    steps:['шаблон условия загружен','поля извлечены (демо)','сопоставление: совпадение','rule applied → PROPOSED_VERDICT'],
+    logCommit:(seed)=>'1. COMMIT seed='+seed+' (зафиксирован ДО выбора)',
+    logPoolAlgo:(pool,jury)=>'2. poolSize='+pool+' jurySize='+jury+' algo=LCG-v8',
+    logTuple:'3. replay_tuple={seed, poolSize, jurySize, algo}',
+    logSelected:(idx)=>'4. selected indices: ['+idx+']',
+    logResult:'5. RESULT: жеребьёвка воспроизводима по seed (deterministic replay)',
+    logMajority:(maj,n,total)=>'majority='+maj+' ('+n+'/'+total+')',
+    proposeCollegial:(maj)=>'Вердикт коллегии: '+maj+' (proposed)',
+    proposeCollegialReason:(n,total)=>`Большинство ${n}/${total}. Schelling применён. PROPOSED only.`,
+    proposeCat3Outcome:'НАПРАВЛЕНО НА КОНСТИТУЦИОННЫЙ ПЕРЕСМОТР', proposeCat3Reason:'Возможное нарушение Ядра / системных правил. Только human path.',
+    proposeCat1Outcome:'УДОВЛЕТВОРИТЬ (proposed)', proposeCat1Reason:'Нарушение чёткого условия установлено. Это PROPOSED, не опубликованный акт.',
+    cat3Ready:'Cat3 package ready', invalidateLineage:'INVALIDATE proposed + jury + seed lineage', lineageBlocked:'lineage invalidated — confirm blocked'
+  }
+};
+function ct(){ return CTX[lang()] || CTX.en; }
+function applyPlaceholders(){
+  const L = lang();
+  document.querySelectorAll('[data-i18n-en-ph]').forEach(el=>{
+    const v = el.getAttribute('data-i18n-'+L+'-ph') || el.getAttribute('data-i18n-en-ph');
+    if(v!=null) el.setAttribute('placeholder', v);
+  });
+}
+applyPlaceholders();
+
+/* ===== HARD STATE MACHINE =====
+   PUBLISHED reachable ONLY from HUMAN_CONFIRMATION
+   error/timeout/unknown → HOLD (never PUBLISHED)
+   Reclassify invalidates proposed lineage
+*/
+const ALLOWED = {
+  INTAKE:['CLASSIFY'], CLASSIFY:['PROCESS'], PROCESS:['PROPOSED','HOLD'],
+  PROPOSED:['HUMAN_CONFIRMATION'], HUMAN_CONFIRMATION:['PUBLISHED','REJECTED','RECLASSIFY'],
+  HOLD:['HUMAN_CONFIRMATION'], PUBLISHED:[], REJECTED:[], RECLASSIFY:['INTAKE']
+};
+
+const S = {
+  phase:'INTAKE', caseId:null, title:'', desc:'', reqCat:null, effCat:null,
+  seed:null, poolSize:0, jurySize:0, drawn:[], votes:{}, rep:{},
+  proposed:null, proposedId:null, log:[], lineageInvalid:false
+};
+
+const NAMES = ['Аскет','Берёза','Вектор','Гранит','Дельта','Ель','Жёлудь','Заря','Ирис','Кедр','Лоза','Маяк','Нить','Опора','Полынь','Роса','Свет','Терн','Уголь','Форт','Хмель','Цикл','Чабрец','Шафран','Щит','Эхо','Юрта','Якорь','Ясень','Брод','Верес','Гроза'];
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function L(msg, cls=''){
+  S.log.push({t:new Date().toLocaleTimeString('ru-RU'), msg, cls});
+  const el = document.querySelector('.steplog');
+  if(el){ el.innerHTML = S.log.map(x=>`<span class="${x.cls}">[${x.t}] ${esc(x.msg)}</span>`).join('\n'); el.scrollTop=el.scrollHeight; }
+}
+
+function transit(to, reason){
+  const from = S.phase;
+  if(!ALLOWED[from]||!ALLOWED[from].includes(to)){
+    L(`ILLEGAL ${from}→${to} (${reason||''}) → HOLD`, 'err');
+    S.phase='HOLD'; return false;
+  }
+  S.phase=to;
+  L(`${from} → ${to}${reason?' · '+reason:''}`, 'ok');
+  return true;
+}
+
+// Category UI
+document.getElementById('catGrid').addEventListener('click', e=>{
+  const opt=e.target.closest('.catopt'); if(!opt) return;
+  document.querySelectorAll('.catopt').forEach(o=>o.classList.remove('sel'));
+  opt.classList.add('sel');
+  S.reqCat=+opt.dataset.cat;
+});
+
+function demo(c){
+  const d=ct().demo;
+  $('title').value=d[c].t; $('desc').value=d[c].d;
+  document.querySelectorAll('.catopt').forEach(o=>{o.classList.toggle('sel', +o.dataset.cat===c)});
+  S.reqCat=c;
+  $('t-rights').checked=c===3; $('t-const').checked=c===3; $('t-contest').checked=c===2;
+}
+
+/** Monotonic fail-closed: triggers set floor; never below */
+function classify(req){
+  const rights=$('t-rights').checked, consti=$('t-const').checked, contest=$('t-contest').checked;
+  let floor=1;
+  if(contest) floor=Math.max(floor,2);
+  if(rights||consti) floor=3;
+  const eff=Math.max(req,floor);
+  return {eff, reason:`req=${req} floor=${floor} → effective=${eff}${eff>req?' | FAIL-CLOSED upgrade':''}`};
+}
+
+$('submitBtn').onclick=()=>{
+  const title=$('title').value.trim(), desc=$('desc').value.trim();
+  if(!title||!desc){alert(ct().fillFields);return}
+  if(!S.reqCat){alert(ct().pickCategory);return}
+
+  S.title=title; S.desc=desc; S.caseId='OSS-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*900000)+100000);
+  S.log=[]; S.drawn=[]; S.votes={}; S.rep={}; S.proposed=null; S.proposedId=null; S.seed=null; S.lineageInvalid=false;
+
+  if(!transit('CLASSIFY','submit')) return;
+  const {eff,reason}=classify(S.reqCat);
+  S.effCat=eff;
+  if(!transit('PROCESS','classified')) return;
+
+  $('sec-intake').classList.add('hidden');
+  renderTicket();
+  renderProcess();
+  L(reason, eff>S.reqCat?'warn':'ok');
+};
+
+function meta(c){
+  // SLA per WP 5.3: Cat1 24–48h, Cat2 5–10 days, Cat3 24–48h review — display only, never publishes
+  const D = ct();
+  if(c===1) return {label:D.catLabels[1], cls:'c1', sla:D.slaLabels[1], mode:'ai'};
+  if(c===2) return {label:D.catLabels[2], cls:'c2', sla:D.slaLabels[2], mode:'jury', jury:5, pool:24};
+  return {label:D.catLabels[3], cls:'c3', sla:D.slaLabels[3], mode:'human'};
+}
+
+function renderTicket(){
+  const m=meta(S.effCat), D=ct();
+  const sec=$('sec-ticket'); sec.classList.remove('hidden');
+  sec.innerHTML=`<div class="ticket">
+    <div>
+      <div class="id">${D.ticketMeta(S.caseId,S.reqCat,S.effCat)}</div>
+      <div class="title">${esc(S.title)}</div>
+      <span class="badge ${m.cls}">${m.label}</span>
+    </div>
+    <div class="sla"><b>${m.sla}</b> <span style="font-size:11px">· ${D.slaCannotPublish}</span></div>
+  </div>`;
+}
+
+function renderProcess(){
+  const m=meta(S.effCat), D=ct();
+  const sec=$('sec-process'); sec.classList.remove('hidden');
+  if(m.mode==='ai'){
+    sec.innerHTML=`<div class="card">
+      <h2>${D.catRule}</h2>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:-.4rem 0 .8rem">${D.catRuleNote}</p>
+      <button class="secondary" id="runAi">${D.runCheck}</button>
+      <div class="steplog" id="plog"></div>
+    </div>`;
+    $('runAi').onclick=runAi;
+  } else if(m.mode==='jury'){
+    S.poolSize=m.pool; S.jurySize=m.jury;
+    sec.innerHTML=`<div class="card">
+      <h2>${D.juryTitle(m.jury,m.pool)}</h2>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:-.4rem 0 .6rem">${D.juryNote}</p>
+      <p style="font-size:12px;color:var(--seal-d);margin:0 0 .6rem">${D.rngDisclaimer}</p>
+      <div class="jurypool" id="pool"></div>
+      <button class="secondary" id="drawBtn">${D.drawBtn}</button>
+      <div class="steplog" id="plog"></div>
+      <div id="voteArea"></div>
+    </div>`;
+    const pool=$('pool');
+    for(let i=0;i<m.pool;i++){const t=document.createElement('div');t.className='token';t.id='tok'+i;t.textContent=String(i+1).padStart(2,'0');pool.appendChild(t)}
+    $('drawBtn').onclick=drawJury;
+  } else {
+    sec.innerHTML=`<div class="card">
+      <h2>${D.cat3Title}</h2>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:-.4rem 0 .8rem">${D.cat3Note}</p>
+      <button class="secondary" id="prep3">${D.prepBtn}</button>
+      <div class="steplog" id="plog"></div>
+    </div>`;
+    $('prep3').onclick=()=>{L(D.cat3Ready,'ok');propose(D.proposeCat3Outcome,D.proposeCat3Reason,'cat3')};
+  }
+}
+
+function runAi(){
+  $('runAi').disabled=true;
+  const D=ct();
+  const steps=D.steps;
+  let i=0;
+  const iv=setInterval(()=>{
+    L(steps[i], i===steps.length-1?'ok':'');
+    i++;
+    if(i>=steps.length){clearInterval(iv);propose(D.proposeCat1Outcome,D.proposeCat1Reason,'cat1')}
+  },400);
+}
+
+function seededRandom(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000}}
+
+function drawJury(){
+  const D=ct();
+  const seedNum=Date.now()%100000;
+  S.seed='seed-'+seedNum+'-'+Date.now().toString(36);
+  L('── AUDIT LOG: JURY DRAW ──','ok');
+  L(D.logCommit(S.seed),'ok');
+  L(D.logPoolAlgo(S.poolSize,S.jurySize),'');
+  L(D.logTuple,'');
+  const rng=seededRandom(seedNum);
+  const idx=Array.from({length:S.poolSize},(_,i)=>i).map(i=>({i,r:rng()})).sort((a,b)=>a.r-b.r).slice(0,S.jurySize).map(x=>x.i).sort((a,b)=>a-b);
+  S.drawn=idx.map(i=>({idx:i, id:'J'+String(i+1).padStart(2,'0'), name:NAMES[i%NAMES.length]+'-'+(i+1)}));
+  idx.forEach(i=>$('tok'+i).classList.add('drawn'));
+  L(D.logSelected(idx.map(i=>String(i+1).padStart(2,'0')).join(', ')),'');
+  S.drawn.forEach(j=>L('   → '+j.id+' ('+j.name+')',''));
+  L(D.logResult,'ok');
+  $('drawBtn').disabled=true;
+  renderVotes();
+}
+
+function renderVotes(){
+  const D=ct();
+  $('voteArea').innerHTML=`<h2 style="margin-top:1.2rem">${D.voting}</h2>
+    <p style="font-size:13px;color:var(--ink-soft)">${D.votingNote}</p>
+    <button class="secondary" id="voteBtn">${D.castVotesBtn}</button>
+    <div id="jlist" style="margin-top:.7rem"></div>`;
+  $('voteBtn').onclick=castVotes;
+}
+
+function castVotes(){
+  const D=ct();
+  const opts=[D.forPlaintiff,D.forDefendant,D.partial];
+  const rng=seededRandom((Date.now()%100000)+9);
+  const votes=S.drawn.map(()=>opts[Math.floor(rng()*opts.length)]);
+  const counts={}; votes.forEach(v=>counts[v]=(counts[v]||0)+1);
+  const maj=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+  $('jlist').innerHTML=S.drawn.map((j,i)=>{
+    const ok=votes[i]===maj; S.rep[j.id]=(S.rep[j.id]||0)+(ok?1:0);
+    return `<div class="jurorrow"><span class="jn">${j.name} <span style="color:var(--ink-faint);font-family:var(--mono);font-size:11px">${j.id}</span></span>
+      <span class="jv">${votes[i]}</span>
+      <span class="jrep ${ok?'up':''}">${ok?D.repUp:D.repZero}</span></div>`;
+  }).join('');
+  $('voteBtn').disabled=true;
+  L(D.logMajority(maj,counts[maj],S.drawn.length),'ok');
+  propose(D.proposeCollegial(maj), D.proposeCollegialReason(counts[maj],S.drawn.length), 'cat2');
+}
+
+function propose(outcome, reasoning, type){
+  S.proposed={outcome,reasoning,type};
+  S.proposedId='PROP-'+Date.now().toString(36);
+  if(!transit('PROPOSED','engine_done')) return;
+  if(!transit('HUMAN_CONFIRMATION','proposed_ready')) return;
+  showGate();
+}
+
+function showGate(){
+  const D=ct();
+  $('sec-gate').classList.remove('hidden');
+  $('sec-gate').innerHTML=`<div class="card">
+    <h2>${D.hcTitle}</h2>
+    <div class="inv">${D.invText}</div>
+    <div class="verdictbox draft">
+      <span class="vstatus draft">${D.proposedWaiting}</span>
+      <p class="vtext">${esc(S.proposed.outcome)}</p>
+      <p style="font-size:13px;color:var(--ink-soft)">${esc(S.proposed.reasoning)}</p>
+      ${S.seed?`<p style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">${D.seedProposed(esc(S.seed),S.proposedId)}</p>`:''}
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <label>${D.attestLabel}</label>
+      <textarea id="attest" placeholder="${D.attestPh}"></textarea>
+    </div>
+    <label style="display:flex;gap:.45rem;align-items:flex-start;font-size:13px;margin:.5rem 0 1rem;cursor:pointer">
+      <input type="checkbox" id="att-cb" style="width:auto;margin-top:3px"> ${D.confirmCb}
+    </label>
+    <div class="row">
+      <button class="gate" id="btnPub" disabled>${D.btnPublish}</button>
+      <button class="danger" id="btnRej">${D.btnReject}</button>
+      <button class="secondary" id="btnRecl">${D.btnReclassify}</button>
+    </div>
+    <p class="gatewarn">${D.gateWarn}</p>
+  </div>`;
+  const upd=()=>{$('btnPub').disabled=!($('att-cb').checked && $('attest').value.trim().length>=10)};
+  $('att-cb').onchange=upd; $('attest').oninput=upd;
+  $('btnPub').onclick=()=>finalize(true);
+  $('btnRej').onclick=()=>finalize(false);
+  $('btnRecl').onclick=reclassify;
+}
+
+function finalize(yes){
+  const D=ct();
+  if(yes){
+    if(S.lineageInvalid){L(D.lineageBlocked,'err');return}
+    if(!$('att-cb').checked||$('attest').value.trim().length<10) return;
+    if(!transit('PUBLISHED','human_attest')) return;
+  } else {
+    if(!transit('REJECTED','human_reject')) return;
+  }
+  $('sec-gate').classList.add('hidden');
+  $('sec-process').classList.add('hidden');
+  const sec=$('sec-final'); sec.classList.remove('hidden');
+  const cls=yes?'published':'rejected';
+  const st=yes?D.published:D.rejected;
+  let extra='';
+  if(yes&&S.proposed.type==='cat2'){
+    extra='<div style="margin-top:.6rem;font-size:13px">'+S.drawn.map(j=>`<span class="jrep ${S.rep[j.id]?'up':''}" style="margin-right:6px">${j.name}: +${S.rep[j.id]||0}</span>`).join('')+'</div>';
+  }
+  sec.innerHTML=`<div class="card">
+    <h2>${D.finalTitle}</h2>
+    <div class="verdictbox ${cls}">
+      <span class="vstatus ${cls}">${st}</span>
+      <p class="vtext">${yes?esc(S.proposed.outcome.replace(' (proposed)','')):D.verdictNotPublished}</p>
+      <p style="font-size:13px;color:var(--ink-soft)">${yes?esc(S.proposed.reasoning):D.rejectedNote}</p>
+      ${extra}
+    </div>
+    <div class="inv">${D.invReached(yes)}</div>
+    <button class="secondary" style="margin-top:1rem" onclick="location.reload()">${D.newCase}</button>
+  </div>`;
+}
+
+function reclassify(){
+  const D=ct();
+  if(!transit('RECLASSIFY','human_reclassify')) return;
+  S.lineageInvalid=true; S.proposed=null; S.proposedId=null; S.drawn=[]; S.votes={}; S.seed=null;
+  L(D.invalidateLineage,'warn');
+  if(!transit('INTAKE','reclassify_done')) return;
+  alert(D.reclassifyAlert);
+  location.reload();
+}
+</script>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>
